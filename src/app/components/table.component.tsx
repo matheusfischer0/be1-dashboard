@@ -21,6 +21,7 @@ function Table<T extends Record<string, any>>({
   handleEdit,
   handleDelete,
 }: TableProps<T>): JSX.Element {
+
   function handleClickOnAction(action: 'edit' | 'delete', item: T) {
     if (action === 'edit' && handleEdit) {
       return handleEdit(item)
@@ -42,7 +43,7 @@ function Table<T extends Record<string, any>>({
         </tr>
       </thead>
       <tbody className="bg-white">
-        {items.map((item, idx) => (
+        {items?.map((item, idx) => (
           <tr key={idx} className={`${idx % 2 === 1 ? 'bg-gray-100' : ''}`}>
             {keys.map((key, idx) => (
               <td className={`px-4 py-2`} key={idx}>

@@ -75,7 +75,7 @@ export const LinkButton = ({
 }: LinkButtonProps) => {
   return (
     <Link
-      className={`w-full flex items-center justify-start hover ${className}`}
+      className={`flex items-center justify-start hover ${className}`}
       {...rest}
     >
       {children}

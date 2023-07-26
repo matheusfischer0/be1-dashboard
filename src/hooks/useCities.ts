@@ -16,14 +16,11 @@ interface IStateProps {
 interface ISelectOptionsProps {
   value: string
   label: string
-  uf: string
 }
 
-const fetchCities = async (siglaUF: string) => {
-  console.log('Carregando Cidades', siglaUF)
-
+const fetchCities = async (state: string) => {
   const response = await http.get<Array<ICityProps>>(
-    `https://servicodados.ibge.gov.br/api/v1/localidades/estados/${siglaUF}/municipios`,
+    `https://servicodados.ibge.gov.br/api/v1/localidades/estados/${state}/municipios`,
   )
 
   const data = response.data.map((item) => ({
@@ -42,17 +39,16 @@ const fetchStates = async () => {
   const data = response.data
     .map((item) => {
       return {
-        value: item.nome,
+        value: item.sigla,
         label: item.nome,
-        uf: item.sigla,
       }
     })
-    .sort((a, b) => (a.uf > b.uf ? 1 : -1))
+    .sort((a, b) => (a.value > b.value ? 1 : -1))
 
   return data as ISelectOptionsProps[]
 }
 
-export const useCities = (siglaUF?: string) => {
+export const useCities = (siglaUF?: string | null) => {
   const {
     data: cities,
     isLoading: isCitiesLoading,

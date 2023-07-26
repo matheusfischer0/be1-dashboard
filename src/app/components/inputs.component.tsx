@@ -11,6 +11,7 @@ import { Button } from './buttons.component'
 import { FiTrash } from 'react-icons/fi'
 
 import FileInput from './Input/FileInput'
+import { IFile } from '@/interfaces/IFile'
 
 interface MaskedInputProps extends HTMLAttributes<HTMLDivElement> {
   register: UseFormRegisterReturn
@@ -41,7 +42,7 @@ interface TextAreaControllerProps extends HTMLAttributes<HTMLTextAreaElement> {
   register: UseFormRegisterReturn
 }
 interface ImagePreviewProps extends HTMLAttributes<HTMLDivElement> {
-  images: File[]
+  files: IFile[]
   onDelete: (id: string) => void
 }
 
@@ -93,23 +94,27 @@ export const Input = {
     )
   },
 
-  SelectController: ({ name, options }: SelectInputProps) => {
+  SelectController: ({ name, options, className }: SelectInputProps) => {
     const { control } = useFormContext()
-
     return (
       <Controller
         name={name}
         control={control}
-        render={({ field: { onChange, value, name, ref } }) => (
-          <Select
-            ref={ref}
-            name={name}
-            options={options}
-            value={options?.find((c) => c.value === value)}
-            onChange={(val) => onChange(val)}
-            className={`w-full max-w-2xl border border-gray-200 rounded-md focus:border-white`}
-          />
-        )}
+        render={({ field: { onChange, value, name, ref } }) => {
+          const activeValueInOptions = options?.find(item => item.value === value)
+          return (
+            <Select
+              ref={ref}
+              styles={{ control: () => ({ display: 'flex', border: 'none' }), }}
+              name={name}
+              options={options}
+              value={activeValueInOptions}
+              onChange={(val) => onChange(val?.value)}
+              className={`w-full border-2 border-gray-200 rounded-md py-[2px] focus:border-white ${className}`}
+            />
+          )
+        }
+        }
       />
     )
   },
@@ -130,21 +135,21 @@ export const Input = {
       />
     )
   },
-  ImagesPreview: ({ className, images, onDelete }: ImagePreviewProps) => {
+  ImagesPreview: ({ className, files, onDelete }: ImagePreviewProps) => {
     return (
       <div className={`w-full ${className}`}>
-        {images.map((image, index) => (
+        {files.map((file, index) => (
           <div key={index} className="relative inline-block">
             <Button
               onClick={() => {
-                onDelete(image.name)
+                onDelete(file.id)
               }}
             >
               <FiTrash size={24} className="text-red-600" />
             </Button>
-            {image && (
+            {file.uri && (
               <Image
-                src={URL.createObjectURL(image)}
+                src={file.uri}
                 alt={`Image ${index + 1}`}
                 className="rounded-md mr-2"
                 width={200}

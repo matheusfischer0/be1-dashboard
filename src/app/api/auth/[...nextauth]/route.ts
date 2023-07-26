@@ -67,7 +67,7 @@ const handler = NextAuth({
 
         const session = await response.json()
 
-        if (session) {
+        if (session && session.user.role === 'ADMIN') {
           // Any object returned will be saved in `user` property of the JWT
           return { id: session.user.id, ...session }
         } else {

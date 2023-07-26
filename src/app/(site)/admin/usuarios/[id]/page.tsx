@@ -8,38 +8,38 @@ import { z } from 'zod'
 import { Input } from '@/app/components/inputs.component'
 import { useRouter } from 'next/navigation'
 import { useCities } from '@/hooks/useCities'
+import { useUser } from '@/hooks/useUser'
+import { cpfIsComplete, cpfIsValid } from '@/lib/cpf-validator'
 
 interface EditPageProps {
   params: { id: string }
 }
+
+const DEFAULT_ROLES = [{ value: 'ADMIN', label: "Admin" }, { value: 'USER', label: "User" }]
 
 // Define the zod schema
 const userSchema = z.object({
   name: z.string().nonempty(),
   email: z.string().email('E-mail inválido'),
   phone: z.string(),
-  state: z
-    .object({ value: z.string(), label: z.string(), uf: z.string() })
-    .transform(({ uf }) => {
-      return uf
-    }),
-  city: z
-    .object({ value: z.string(), label: z.string() })
-    .transform(({ label }) => {
-      return label
-    }),
-  cpf: z.string().length(14, 'O CPF está incompleto'),
+  state: z.string(),
+  city: z.string(),
+  cpf: z.string().refine(cpfIsComplete, {
+    message: "CPF está incompleto",
+  }).refine(cpfIsValid, {
+    message: "CPF Inválido",
+  }),
   role: z.enum(['ADMIN', 'USER']),
-  password: z.string(),
 })
 
-type CreateUserFormData = z.infer<typeof userSchema>
+type UpdateUserFormData = z.infer<typeof userSchema>
+
 
 export default function EditPage({ params }: EditPageProps) {
-  const { users, isLoading, error, updateUser } = useUsers()
+  const { user, isLoading, error, updateUser } = useUser(params.id)
   const router = useRouter()
 
-  const methods = useForm<CreateUserFormData>({
+  const methods = useForm<UpdateUserFormData>({
     resolver: zodResolver(userSchema),
   })
 
@@ -61,24 +61,26 @@ export default function EditPage({ params }: EditPageProps) {
   }, [selectedState, filterCities])
 
   useEffect(() => {
-    const selectedUser = users?.find((user) => user.id.toString() === params.id)
-    if (selectedUser) {
-      setValue('name', selectedUser.name)
-      setValue('email', selectedUser.email)
-      setValue('phone', selectedUser.phone)
-      setValue('state', selectedUser.state)
-      setValue('city', selectedUser.city)
-      setValue('cpf', selectedUser.cpf)
-      setValue('role', selectedUser.role)
+    if (user) {
+      setValue('name', user.name)
+      setValue('email', user.email)
+      if (user.phone) setValue('phone', user.phone)
+      if (user.state) setValue('state', user.state)
+      if (user.city) setValue('city', user.city)
+      if (user.cpf) setValue('cpf', user.cpf)
+      setValue('role', user.role)
     }
-  }, [users, params, setValue])
+  }, [user, states, cities, params, setValue])
 
   if (isLoading) return <div>Loading...</div>
   if (error) return <div>An error has occurred: {error.message}</div>
 
-  const onSubmit = (data: any) => {
-    if (data.name) {
-      updateUser({ id: params.id, ...data })
+  const onSubmit = (data: UpdateUserFormData) => {
+    if (data.name && user?.id) {
+      updateUser({
+        id: user.id,
+        ...data,
+      })
     }
     router.push('/admin/usuarios')
   }
@@ -88,11 +90,10 @@ export default function EditPage({ params }: EditPageProps) {
       <div className="pb-2 text-xl font-bold">Editar Usuário</div>
       <FormProvider {...methods}>
         <form className="flex flex-col" onSubmit={handleSubmit(onSubmit)}>
-          <div className="flex flex-col flex-wrap gap-3">
-            <Input.Root className="flex-1">
+          <div className="flex flex-row flex-wrap gap-3">
+            <Input.Root className="w-full md:w-[500px]">
               <Input.Label>Nome:</Input.Label>
               <Input.Controller
-                className="w-full max-w-2xl"
                 register={register('name')}
                 type="text"
               />
@@ -100,10 +101,9 @@ export default function EditPage({ params }: EditPageProps) {
                 {errors.name && <p>{errors.name.message?.toString()}</p>}
               </Input.Error>
             </Input.Root>
-            <Input.Root className="flex-1">
+            <Input.Root className="w-full md:w-[500px]">
               <Input.Label>E-mail:</Input.Label>
               <Input.Controller
-                className="w-full max-w-2xl"
                 register={register('email')}
                 type="email"
               />
@@ -111,10 +111,11 @@ export default function EditPage({ params }: EditPageProps) {
                 {errors.email && <p>{errors.email.message?.toString()}</p>}
               </Input.Error>
             </Input.Root>
-            <Input.Root className="flex-1">
+
+
+            <Input.Root className="w-full md:w-[500px]">
               <Input.Label>Telefone:</Input.Label>
               <Input.MaskedController
-                className="w-full max-w-2xl"
                 register={register('phone')}
                 mask="(99) 99999-9999"
               />
@@ -122,10 +123,9 @@ export default function EditPage({ params }: EditPageProps) {
                 {errors.phone && <p>{errors.phone.message?.toString()}</p>}
               </Input.Error>
             </Input.Root>
-            <Input.Root className="flex-1">
+            <Input.Root className="w-full md:w-[500px]">
               <Input.Label>CPF:</Input.Label>
               <Input.MaskedController
-                className="w-full max-w-2xl"
                 register={register('cpf')}
                 mask="999.999.999-99"
               />
@@ -133,55 +133,55 @@ export default function EditPage({ params }: EditPageProps) {
                 {errors.cpf && <p>{errors.cpf.message?.toString()}</p>}
               </Input.Error>
             </Input.Root>
-            <Input.Root>
+            <Input.Root className="w-full md:w-[500px]">
               <Input.Label>Estado:</Input.Label>
               <Input.SelectController
                 name="state"
                 options={states}
-                className="w-full max-w-2xl"
               />
               <Input.Error>
                 {errors.state && <p>{errors.state.message?.toString()}</p>}
               </Input.Error>
             </Input.Root>
-            <Input.Root>
+            <Input.Root className="w-full md:w-[500px]">
               <Input.Label>Cidade:</Input.Label>
               <Input.SelectController
                 name="city"
                 options={cities}
-                className="w-full max-w-2xl"
               />
               <Input.Error>
                 {errors.city && <p>{errors.city.message?.toString()}</p>}
               </Input.Error>
             </Input.Root>
-            <Input.Root>
+            <Input.Root className="w-full md:w-[500px]">
               <Input.Label>Tipo de usuário:</Input.Label>
-              <select
-                className="w-full max-w-2xl border-2 border-gray-200 rounded-md p-2 focus:border-white"
-                {...register('role')}
-              >
-                <option value="ADMIN">Admin</option>
-                <option value="DEFAULT">User</option>
-              </select>
+              <Input.SelectController
+                name="role"
+                options={DEFAULT_ROLES}
+              />
               <Input.Error>
                 {errors.role && <p>{errors.role.message?.toString()}</p>}
               </Input.Error>
             </Input.Root>
 
-            <Input.Root className="flex-1">
-              <Input.Label>Senha:</Input.Label>
-              <Input.Controller
-                className="w-full max-w-2xl"
-                register={register('password')}
-                type="password"
-              />
+            {/* <Input.Root className="w-full md:w-[500px]">
+              <Input.Label className='flex items-center'>Senha:</Input.Label>
+              <Input.Label className='flex items-center'>
+                <Input.Icon>
+                  <MdDangerous size={44} className="text-red-400"></MdDangerous>
+                </Input.Icon>
+                <Input.Controller
+                  className="w-full max-w-2xl border border-red-400"
+                  register={register('password')}
+                  type="password"
+                />
+              </Input.Label>
               <Input.Error>
                 {errors.password && (
                   <p>{errors.password.message?.toString()}</p>
                 )}
               </Input.Error>
-            </Input.Root>
+            </Input.Root> */}
           </div>
 
           <div className="py-3">

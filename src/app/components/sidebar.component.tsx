@@ -15,7 +15,7 @@ export default function Sidebar() {
 
   return (
     <div
-      className={`relative flex h-screen text-black shadow-sidebar bg-white 
+      className={`relative flex h-screen text-black shadow-sidebar bg-white border-r border-r-gray-100
                   ${isOpen ? 'w-0 md:block md:w-20' : 'w-20 md:w-44'}`}
     >
       <button
@@ -46,7 +46,7 @@ export default function Sidebar() {
                          ${isOpen ? '' : ' md:justify-start'} `}
               prefetch
             >
-              <div className={`md:pr-2 ${isOpen ? 'md:pr-0' : ''}`}>
+              <div className={`${isOpen ? 'pr-0' : 'pr-2'}`}>
                 <FiHome size={20} />
               </div>
               <span
@@ -62,7 +62,7 @@ export default function Sidebar() {
               ${isOpen ? '' : ' md:justify-start'} `}
               prefetch
             >
-              <div className={`md:pr-2 ${isOpen ? 'md:pr-0' : ''}`}>
+              <div className={`${isOpen ? 'pr-0' : 'pr-2'}`}>
                 <BsListTask size={20} />
               </div>
               <span
@@ -79,7 +79,7 @@ export default function Sidebar() {
               ${isOpen ? '' : ' md:justify-start'} `}
               prefetch
             >
-              <div className={`md:pr-2 ${isOpen ? 'md:pr-0' : ''}`}>
+              <div className={`${isOpen ? 'pr-0' : 'pr-2'}`}>
                 <FiUsers size={20} />
               </div>
               <span
@@ -95,7 +95,7 @@ export default function Sidebar() {
               ${isOpen ? '' : ' md:justify-start'} `}
               prefetch
             >
-              <div className={`md:pr-2 ${isOpen ? 'md:pr-0' : ''}`}>
+              <div className={`${isOpen ? 'pr-0' : 'pr-2'}`}>
                 <GiSettingsKnobs size={20} />
               </div>
               <span

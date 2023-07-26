@@ -2,16 +2,19 @@
 
 import React, { useEffect } from 'react'
 import { useUsers } from '@/hooks/useUsers'
-import { FormProvider, useForm } from 'react-hook-form'
+import { FormProvider, useForm, useWatch } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { Input } from '@/app/components/inputs.component'
 import { useRouter } from 'next/navigation'
 import { useCities } from '@/hooks/useCities'
+import { cpfIsComplete, cpfIsValid } from '@/lib/cpf-validator'
 
 interface RegisterPageProps {
   params: {}
 }
+
+const DEFAULT_ROLES = [{ value: 'ADMIN', label: "Admin" }, { value: 'USER', label: "User" }]
 
 // Define the zod schema
 const userSchema = z.object({
@@ -21,14 +24,19 @@ const userSchema = z.object({
   state: z
     .object({ value: z.string(), label: z.string(), uf: z.string() })
     .transform(({ uf }) => {
-      return uf
-    }),
+      return String(uf)
+    })
+  ,
   city: z
     .object({ value: z.string(), label: z.string() })
     .transform(({ label }) => {
-      return label
+      return String(label)
     }),
-  cpf: z.string().length(14, 'O CPF está incompleto'),
+  cpf: z.string().refine(cpfIsComplete, {
+    message: "CPF está incompleto",
+  }).refine(cpfIsValid, {
+    message: "CPF Inválido",
+  }),
   role: z.enum(['ADMIN', 'USER']),
   password: z.string(),
 })
@@ -45,13 +53,13 @@ export default function RegisterPage({ params }: RegisterPageProps) {
   })
 
   const {
+    control,
     register,
     handleSubmit,
     formState: { errors },
-    watch,
   } = methods
 
-  const selectedState = watch('state')
+  const selectedState = useWatch({ control, name: 'state' })
 
   const { cities, states, filterCities } = useCities(selectedState)
 
@@ -144,13 +152,10 @@ export default function RegisterPage({ params }: RegisterPageProps) {
             </Input.Root>
             <Input.Root>
               <Input.Label>Tipo de usuário:</Input.Label>
-              <select
-                className="w-full max-w-2xl border-2 border-gray-200 rounded-md p-2 focus:border-white"
-                {...register('role')}
-              >
-                <option value="ADMIN">Admin</option>
-                <option value="DEFAULT">User</option>
-              </select>
+              <Input.SelectController
+                name="role"
+                options={DEFAULT_ROLES}
+              />
               <Input.Error>
                 {errors.role && <p>{errors.role.message?.toString()}</p>}
               </Input.Error>
