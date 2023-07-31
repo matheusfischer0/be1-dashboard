@@ -19,8 +19,9 @@ interface RegisterPageProps {
 const productSchema = z.object({
   name: z.string().nonempty('O nome é obrigatório'),
   smallDescription: z.string().nonempty('A descrição curta é obrigatória').max(100, "Máximo de 100 caracteres"),
-  description: z.string(),
+  description: z.string().nonempty('Uma descrição deve ser adicionada!'),
   images: z.any().optional() as ZodType<FileList | null>,
+  files: z.any().optional() as ZodType<FileList | null>,
 })
 
 type CreateProductFormData = z.infer<typeof productSchema>
@@ -29,18 +30,20 @@ export default function RegisterPage({ params }: RegisterPageProps) {
   const { createProduct, error } = useProducts()
 
   const { uploadFiles, deleteFile, files } = useFile({
-    queryString: `?filePath=produtos/files`,
+    filePath: 'produtos/files',
+    fileType: 'DOCUMENT',
   })
 
-  const { uploadFiles: uploadImages, deleteFile: deleteImages, files: images } = useFile({
-    queryString: `?filePath=produtos/images`,
+  const { uploadFiles: uploadImages, deleteFile: deleteImage, files: images } = useFile({
+    filePath: 'produtos/images',
+    fileType: 'IMAGE',
   })
 
   const router = useRouter()
 
   const methods = useForm<CreateProductFormData>({
     resolver: zodResolver(productSchema),
-    reValidateMode: "onChange"
+    reValidateMode: "onSubmit"
   })
 
   const {
@@ -52,7 +55,7 @@ export default function RegisterPage({ params }: RegisterPageProps) {
   } = methods
 
   const selectedImages = watch('images')
-  // const selectedFiles = watch('files')
+  const selectedFiles = watch('files')
 
   const handleUploadImages = useCallback(async (imagesToUpload: FileList) => {
     await uploadImages(imagesToUpload);
@@ -61,16 +64,20 @@ export default function RegisterPage({ params }: RegisterPageProps) {
 
   const handleUploadFiles = useCallback(async (filesToUpload: FileList) => {
     await uploadFiles(filesToUpload);
+    setValue('files', null)
   }, [uploadFiles]);
 
   useEffect(() => {
     if (selectedImages) {
       handleUploadImages(selectedImages)
     }
-    // if (selectedFiles) {
-    //   handleUploadFiles(selectedFiles)
-    // }
   }, [selectedImages])
+
+  useEffect(() => {
+    if (selectedFiles) {
+      handleUploadFiles(selectedFiles)
+    }
+  }, [selectedFiles])
 
   const onSubmit = (data: CreateProductFormData) => {
     if (data.name) {
@@ -79,8 +86,11 @@ export default function RegisterPage({ params }: RegisterPageProps) {
     router.push('/admin/configuracoes/produtos')
   }
 
-  function handleDeleteImage(id: string) {
-    deleteImages(id)
+  const handleDeleteImage = (id: string) => {
+    deleteImage(id)
+  }
+  const handleDeleteFile = (id: string) => {
+    deleteFile(id)
   }
 
   if (error) return <div>An error has occurred: {error.message}</div>
@@ -91,8 +101,8 @@ export default function RegisterPage({ params }: RegisterPageProps) {
       <FormProvider {...methods}>
         <form className="flex flex-col" onSubmit={handleSubmit(onSubmit)}>
           <div className="flex">
-            <div className="flex flex-wrap gap-3">
-              <Input.Root className="flex-1 min-w-[500px]">
+            <div className="flex flex-wrap gap-2">
+              <Input.Root className="w-full md:flex-1">
                 <Input.Label>Nome</Input.Label>
                 <Input.Controller
                   register={register('name')}
@@ -102,7 +112,7 @@ export default function RegisterPage({ params }: RegisterPageProps) {
                   {errors.name && <p>{errors.name.message?.toString()}</p>}
                 </Input.Error>
               </Input.Root>
-              <Input.Root className="flex-1 min-w-[500px]">
+              <Input.Root className="w-full md:flex-1">
                 <Input.Label>Descrição Curta</Input.Label>
                 <Input.Controller
                   register={register('smallDescription')}
@@ -124,19 +134,25 @@ export default function RegisterPage({ params }: RegisterPageProps) {
                 </Input.Error>
               </Input.Root>
 
-              <Input.Root className="flex-1 min-w-[500px]">
+              <Input.Root className="w-full lg:w-1/2 lg:flex-1">
                 <Input.Label>Fotos do produto</Input.Label>
-                <Input.FileController name="images" accept="image/*" />
+                <Input.FileController name="images" accept="image/*" multiple />
                 <Input.Error>
                   {errors.images && <p>{errors.images.message?.toString()}</p>}
                 </Input.Error>
                 {images && (
-                  <>
-                    <Input.Label className="pt-4">Imagens:</Input.Label>
-                    <Input.ImagesPreview files={images} onDelete={(id) => handleDeleteImage(id)} />
-                  </>
+                  <Input.ImagesPreview files={images} onDelete={(id) => handleDeleteImage(id)} />
                 )}
-
+              </Input.Root>
+              <Input.Root className="w-full lg:w-1/2 lg:flex-1">
+                <Input.Label>Arquivos (Visíveis para produtores e técnicos)</Input.Label>
+                <Input.FileController name="files" accept=".pdf" multiple />
+                <Input.Error>
+                  {errors.files && <p>{errors.files.message?.toString()}</p>}
+                </Input.Error>
+                {files && (
+                  <Input.FilesPreview files={files} onDelete={(id) => handleDeleteFile(id)} />
+                )}
               </Input.Root>
 
             </div>

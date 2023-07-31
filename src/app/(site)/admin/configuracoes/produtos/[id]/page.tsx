@@ -7,9 +7,6 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { Input } from '@/app/components/inputs.component'
 import { Button } from '@/app/components/buttons.component'
 import { useFile } from '@/hooks/useFile'
-import { IProduct } from '@/interfaces/IProduct'
-import Image from 'next/image'
-import { FiTrash } from 'react-icons/fi'
 import { useRouter } from 'next/navigation'
 import { useProduct } from '@/hooks/useProduct'
 
@@ -20,12 +17,11 @@ interface EditPageProps {
 // Define the zod schema
 const productSchema = z.object({
   name: z.string().nonempty('O nome não pode ser vazio!'),
-  smallDescription: z
-    .string()
-    .nonempty('Uma breve descrição deve ser adicionada!'),
+  smallDescription: z.string().nonempty('A descrição curta é obrigatória')
+    .max(100, "Máximo de 100 caracteres"),
   description: z.string().nonempty('Uma descrição deve ser adicionada!'),
-  images: z.any().optional().nullable() as ZodType<FileList>,
-  files: z.any().optional().nullable() as ZodType<FileList>,
+  images: z.any().optional() as ZodType<FileList | null>,
+  files: z.any().optional() as ZodType<FileList | null>,
 })
 
 type EditProductFormData = z.infer<typeof productSchema>
@@ -34,15 +30,23 @@ export default function EditPage({ params }: EditPageProps) {
   const { product, updateProduct, refetchProduct, isLoading, error } =
     useProduct(params.id)
 
+  const { files, uploadFiles, deleteFile, setInitialFiles } = useFile({
+    productId: product?.id,
+    filePath: 'produtos/files',
+    fileType: 'DOCUMENT',
+  })
+
   const { files: images, uploadFiles: uploadImages, deleteFile: deleteImage, setInitialFiles: setInitialImages } = useFile({
-    queryString: `?productId=${product?.id}&filePath=produtos/images`,
+    productId: product?.id,
+    filePath: 'produtos/images',
+    fileType: 'IMAGE',
   })
 
   const router = useRouter()
 
   const methods = useForm<EditProductFormData>({
     resolver: zodResolver(productSchema),
-    reValidateMode: 'onChange',
+    reValidateMode: 'onSubmit',
   })
 
   const {
@@ -53,18 +57,31 @@ export default function EditPage({ params }: EditPageProps) {
     watch,
   } = methods
 
+  // WATCH IMAGES TO BE UPLOADED
   const selectedImages = watch('images')
-
   const handleUploadImages = useCallback(async (imagesToUpload: FileList) => {
     await uploadImages(imagesToUpload);
+    setValue('images', null)
   }, [uploadImages]);
 
   useEffect(() => {
     if (selectedImages) {
       handleUploadImages(selectedImages)
-      setValue('images', null)
     }
   }, [selectedImages])
+
+  // WATCH FILES TO BE UPLOADED
+  const selectedFiles = watch('files')
+  const handleUploadFiles = useCallback(async (filesToUpload: FileList) => {
+    await uploadFiles(filesToUpload);
+    setValue('files', null)
+  }, [uploadFiles]);
+
+  useEffect(() => {
+    if (selectedFiles) {
+      handleUploadFiles(selectedFiles)
+    }
+  }, [selectedFiles])
 
   useEffect(() => {
     if (product) {
@@ -74,16 +91,15 @@ export default function EditPage({ params }: EditPageProps) {
         'description',
         product.description ? product.description : '',
       )
+      setValue('images', null)
+      setValue('files', null)
 
-      const productImages = product.files?.filter(file => file.fileName?.split('.')[1] === 'jpg' || 'jpeg' || 'png')
-      if (productImages) setInitialImages(productImages)
+      if (product.images) setInitialImages(product.images)
 
-      // const productFiles = product.files?.filter(file => file.fileType !== 'IMAGE')
-      // if (productFiles) setInitialFiles(productFiles)
+      if (product.files) setInitialFiles(product.files)
     }
-  }, [product, params, setValue])
+  }, [product])
 
-  if (isLoading) return <div>Loading...</div>
   if (error) return <div>An error has occurred: {error.message}</div>
 
   const onSubmit = (data: EditProductFormData) => {
@@ -99,8 +115,11 @@ export default function EditPage({ params }: EditPageProps) {
     router.push('/admin/configuracoes/produtos')
   }
 
-  function handleDeleteImage(id: string) {
+  const handleDeleteImage = (id: string) => {
     deleteImage(id)
+  }
+  const handleDeleteFile = (id: string) => {
+    deleteFile(id)
   }
 
   return (
@@ -111,10 +130,10 @@ export default function EditPage({ params }: EditPageProps) {
           className="w-full flex flex-col"
           onSubmit={handleSubmit(onSubmit)}
         >
-          <div className="">
+          <div className="flex">
             <div className="flex flex-wrap gap-3">
-              <Input.Root className="flex-1 min-w-[500px]">
-                <Input.Label>Nome:</Input.Label>
+              <Input.Root className="w-full md:flex-1">
+                <Input.Label>Nome</Input.Label>
                 <Input.Controller
                   register={register('name')}
                   type="text"
@@ -123,8 +142,8 @@ export default function EditPage({ params }: EditPageProps) {
                   {errors.name && <p>{errors.name.message?.toString()}</p>}
                 </Input.Error>
               </Input.Root>
-              <Input.Root className="flex-1 min-w-[500px]">
-                <Input.Label>Pequena Descrição:</Input.Label>
+              <Input.Root className="w-full md:flex-1">
+                <Input.Label>Descrição Curta</Input.Label>
                 <Input.Controller
                   register={register('smallDescription')}
                   type="text"
@@ -136,7 +155,7 @@ export default function EditPage({ params }: EditPageProps) {
                 </Input.Error>
               </Input.Root>
               <Input.Root className="w-full">
-                <Input.Label>Descrição:</Input.Label>
+                <Input.Label>Descrição</Input.Label>
                 <Input.TextAreaController
                   register={register('description')}
                 />
@@ -144,19 +163,25 @@ export default function EditPage({ params }: EditPageProps) {
                   {errors.name && <p>{errors.name.message?.toString()}</p>}
                 </Input.Error>
               </Input.Root>
-            </div>
-            <div className="flex-1">
-              <Input.Root className="max-w-2xl">
-                <Input.Label>Adicione novas images:</Input.Label>
+
+              <Input.Root className="w-full lg:flex-1">
+                <Input.Label>Fotos do produto</Input.Label>
                 <Input.FileController name="images" accept="image/*" multiple />
                 <Input.Error>
                   {errors.images && <p>{errors.images.message?.toString()}</p>}
                 </Input.Error>
                 {images && (
-                  <>
-                    <Input.Label className="pt-4">Imagens:</Input.Label>
-                    <Input.ImagesPreview files={images} onDelete={(id) => handleDeleteImage(id)} />
-                  </>
+                  <Input.ImagesPreview files={images} onDelete={(id) => handleDeleteImage(id)} />
+                )}
+              </Input.Root>
+              <Input.Root className="w-full lg:flex-1">
+                <Input.Label>Arquivos (Visível para produtores e técnicos)</Input.Label>
+                <Input.FileController name="files" accept=".pdf" multiple />
+                <Input.Error>
+                  {errors.files && <p>{errors.files.message?.toString()}</p>}
+                </Input.Error>
+                {files && (
+                  <Input.FilesPreview files={files} onDelete={(id) => handleDeleteFile(id)} />
                 )}
               </Input.Root>
 

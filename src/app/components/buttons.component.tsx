@@ -3,6 +3,7 @@
 import { signIn, signOut } from 'next-auth/react'
 import Link, { LinkProps } from 'next/link'
 import { ButtonHTMLAttributes, ReactNode, ComponentProps } from 'react'
+import { twMerge } from 'tailwind-merge'
 
 interface IButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   children: ReactNode
@@ -55,7 +56,7 @@ export const Button = ({
   return (
     <button
       disabled={disabled}
-      className={`h-[52px] flex items-center justify-start hover:bg-gray-100 transition-all ease-in-out duration-300 ${className}`}
+      className={twMerge(`h-[52px] flex items-center justify-start hover:bg-gray-100 transition-all ease-in-out duration-300`, className)}
       {...rest}
     >
       {children}

@@ -4,7 +4,10 @@ import { http } from '@/lib/http-common'
 import { IFile } from '@/interfaces/IFile'
 
 interface UseUploadFileProps {
-  queryString: string
+  filePath: string,
+  fileType: string,
+  productId?: string,
+  videoId?: string
 }
 
 interface UseUploadFileResult {
@@ -17,11 +20,18 @@ interface UseUploadFileResult {
 }
 
 export const useFile = ({
-  queryString,
+  filePath,
+  fileType,
+  productId,
+  videoId
 }: UseUploadFileProps): UseUploadFileResult => {
   const [error, setError] = useState<AxiosError | null>(null)
   const [files, setFiles] = useState<IFile[]>()
   const [isLoading, setIsLoading] = useState(false)
+
+  const filePathEncoded = encodeURIComponent(filePath)
+
+  const urlEncoded = `filePath=${filePathEncoded}&fileType=${fileType}${productId ? `&productId=${productId}` : ''}${videoId ? `&videoId=${videoId}` : ''}`
 
   const setInitialFiles = (initialFiles: IFile[]) => {
     setFiles(initialFiles)
@@ -57,14 +67,15 @@ export const useFile = ({
         formData.append('files', file as Blob)
       })
 
-      const { data: uploadedFiles } = await http.patch<IFile[]>(`/files${queryString}`, formData, {
+      const { data: uploadedFiles } = await http.patch<IFile[]>(`/files?${urlEncoded}`, formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
         },
       })
+      console.log("uploadedFiles", uploadedFiles)
 
       const newFiles = files ? [...files, ...uploadedFiles] : [...uploadedFiles]
-
+      console.log("newFiles", newFiles)
       setFiles(newFiles)
 
       setIsLoading(false)

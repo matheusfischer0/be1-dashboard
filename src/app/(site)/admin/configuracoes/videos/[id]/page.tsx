@@ -7,9 +7,8 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { Input } from '@/app/components/inputs.component'
 import { Button } from '@/app/components/buttons.component'
 import { useFile } from '@/hooks/useFile'
-import { IVideo } from '@/interfaces/IVideo'
 import Image from 'next/image'
-import { FiTrash } from 'react-icons/fi'
+import { FiCornerDownRight, FiCornerUpRight, FiTrash, } from 'react-icons/fi'
 import { useRouter } from 'next/navigation'
 import { useVideo } from '@/hooks/useVideo'
 
@@ -21,7 +20,8 @@ interface EditPageProps {
 const videoSchema = z.object({
   name: z.string().nonempty('O nome não pode ser vazio!'),
   description: z.string().nonempty('Uma descrição deve ser adicionada!'),
-  file: z.any() as ZodType<FileList>,
+  videoUrl: z.string(),
+  file: z.instanceof(FileList),
 })
 
 type EditVideoFormData = z.infer<typeof videoSchema>
@@ -52,9 +52,10 @@ export default function EditPage({ params }: EditPageProps) {
   const selectedFile = watch('file')
 
   useEffect(() => {
-    uploadFiles(selectedFile)
-    refetchVideo()
-  }, [selectedFile, uploadFiles, refetchVideo])
+    console.log("here:", selectedFile)
+    // uploadFiles(selectedFile)
+    // refetchVideo()
+  }, [selectedFile])
 
   useEffect(() => {
     if (video) {
@@ -62,6 +63,10 @@ export default function EditPage({ params }: EditPageProps) {
       setValue(
         'description',
         video.description ? video.description : '',
+      )
+      setValue(
+        'videoUrl',
+        video.videoUrl ? video.videoUrl : '',
       )
     }
   }, [video, params, setValue])
@@ -75,6 +80,7 @@ export default function EditPage({ params }: EditPageProps) {
         id: params.id,
         name: data.name,
         description: data.description,
+        videoUrl: data.videoUrl,
       })
     }
     router.push('/admin/configuracoes/videos')
@@ -93,11 +99,10 @@ export default function EditPage({ params }: EditPageProps) {
           onSubmit={handleSubmit(onSubmit)}
         >
           <div className="">
-            <div className="flex  flex-col justify flex-wrap gap-3 py-4">
-              <Input.Root className="max-w-2xl">
+            <div className="flex flex-col gap-3 py-4">
+              <Input.Root className="w-full max-w-[750px]">
                 <Input.Label>Nome:</Input.Label>
                 <Input.Controller
-                  className="w-full"
                   register={register('name')}
                   type="text"
                 />
@@ -105,7 +110,7 @@ export default function EditPage({ params }: EditPageProps) {
                   {errors.name && <p>{errors.name.message?.toString()}</p>}
                 </Input.Error>
               </Input.Root>
-              <Input.Root className="max-w-2xl">
+              <Input.Root className="w-full max-w-[750px]">
                 <Input.Label>Descrição:</Input.Label>
                 <Input.TextAreaController register={register('description')} />
                 <Input.Error>
@@ -114,16 +119,40 @@ export default function EditPage({ params }: EditPageProps) {
                   )}
                 </Input.Error>
               </Input.Root>
-            </div>
-            <div className="flex-1">
-              <Input.Root className="max-w-2xl">
-                <Input.Label>Adicione um video:</Input.Label>
-                <Input.FileController name="file" accept="video/*" multiple />
-                <Input.Error>
-                  {errors.file && <p>{errors.file.message?.toString()}</p>}
-                </Input.Error>
-              </Input.Root>
-              <Input.Label className="pt-4">Videos:</Input.Label>
+
+              <div className='flex'>
+                <div className='flex-1'>
+                  <Input.Root className="w-full max-w-[750px]">
+                    <Input.Label>Adicione um video ou Link do Youtube:</Input.Label>
+                    <div className='flex items-center'>
+                      <FiCornerUpRight size={24} className="text-zinc-300" />
+                      <div className='flex-1'>
+                        <Input.FileController name="file" accept="video/*" multiple />
+                      </div>
+                    </div>
+                    <Input.Error>
+                      {errors.file && <p>{errors.file.message?.toString()}</p>}
+                    </Input.Error>
+                  </Input.Root>
+                  <Input.Root className="w-full max-w-[750px]">
+                    <div className='flex'>
+                      <FiCornerDownRight size={24} className="text-zinc-300" />
+                      <div className='flex-1'>
+                        <Input.Controller
+                          register={register('videoUrl')}
+                          type="text"
+                        />
+                      </div>
+                    </div>
+                    <Input.Error>
+                      {errors.videoUrl && (
+                        <p>{errors.videoUrl.message?.toString()}</p>
+                      )}
+                    </Input.Error>
+                  </Input.Root>
+                </div>
+
+              </div>
 
               {video?.file && (
                 <div className="relative inline-block">
