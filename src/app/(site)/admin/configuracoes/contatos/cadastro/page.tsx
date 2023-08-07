@@ -1,6 +1,6 @@
 'use client'
 
-import React from 'react'
+import React, { useCallback } from 'react'
 import { useContacts } from '@/hooks/useContacts'
 import { FormProvider, useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -44,11 +44,10 @@ export default function RegisterPage({ params }: RegisterPageProps) {
 
   const selectedMask = DEFAULT_MASKS.find(mask => mask.label === selectedType)?.mask ?? ''
 
-  const onSubmit = (data: CreateContactFormData) => {
+  const onSubmit = async (data: CreateContactFormData) => {
     if (data.contact) {
-      createContact(data) // You will need to adjust the createContact function to handle FormData
+      await createContact(data) // You will need to adjust the createContact function to handle FormData
     }
-    router.push('/admin/configuracoes/contatos')
   }
 
   if (error) return <div>An error has occurred: {error.message}</div>

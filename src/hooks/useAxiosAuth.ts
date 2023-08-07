@@ -29,7 +29,7 @@ const useAxiosAuth = () => {
             originalConfig._retry = true
 
             try {
-              const rs = await fetch("http://localhost:3333/refresh-token", {
+              const rs = await fetch(process.env.NEXT_PUBLIC_API + "/refresh-token", {
                 method: 'POST',
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
