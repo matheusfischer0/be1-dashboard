@@ -55,7 +55,7 @@ const handler = NextAuth({
       },
       async authorize(credentials, req) {
         // Add logic here to look up the user from the credentials supplied
-        const response = await fetch("http://localhost:3333/sessions", {
+        const response = await fetch(process.env.NEXT_PUBLIC_API + "/sessions", {
           method: 'POST',
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
