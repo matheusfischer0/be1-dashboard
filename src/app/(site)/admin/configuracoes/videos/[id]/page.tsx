@@ -63,7 +63,7 @@ export default function EditPage({ params }: EditPageProps) {
     if (selectedVideo) {
       handleUploadVideos(selectedVideo)
     }
-  }, [selectedVideo])
+  }, [selectedVideo, handleUploadVideos])
 
   useEffect(() => {
     if (video) {
@@ -79,7 +79,7 @@ export default function EditPage({ params }: EditPageProps) {
       if (video?.file)
         setInitialFiles([video?.file])
     }
-  }, [video, params, setValue])
+  }, [video, setValue, setInitialFiles])
 
   if (error) return <div>An error has occurred: {error.message}</div>
 
