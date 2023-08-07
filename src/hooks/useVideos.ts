@@ -14,6 +14,7 @@ export const useVideos = () => {
   const createVideo = async (
     newVideo: Partial<IVideo>,
   ): Promise<IVideo> => {
+    console.log(newVideo)
     const { data } = await http.post('/videos/create', newVideo)
     return data
   }

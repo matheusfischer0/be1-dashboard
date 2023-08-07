@@ -89,6 +89,7 @@ export default function RegisterPage({ params }: RegisterPageProps) {
   const handleDeleteImage = (id: string) => {
     deleteImage(id)
   }
+
   const handleDeleteFile = (id: string) => {
     deleteFile(id)
   }

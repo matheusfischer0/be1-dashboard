@@ -54,7 +54,7 @@ const useAxiosAuth = () => {
               localStorage.removeItem('access-token')
               localStorage.removeItem('refresh-token')
               // Redirecting the user to the landing page
-              window.location.href = window.location.origin + '/login'
+              window.location.href = window.location.origin + '/auth/login'
               return Promise.reject(_error)
             }
           }

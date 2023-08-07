@@ -6,6 +6,8 @@ import {
 } from 'react-hook-form'
 import { twMerge } from 'tailwind-merge'
 import Select, { Props as SelectProps } from 'react-select'
+
+import ReactPlayer from 'react-player';
 import InputMask from 'react-input-mask'
 import Image from 'next/image'
 import { Button } from './buttons.component'
@@ -46,6 +48,11 @@ interface TextAreaControllerProps extends HTMLAttributes<HTMLTextAreaElement> {
 interface ImagePreviewProps extends HTMLAttributes<HTMLDivElement> {
   files: IFile[]
   onDelete: (id: string) => void
+}
+
+interface VideoPreviewProps extends HTMLAttributes<HTMLDivElement> {
+  files: IFile[];
+  onDelete: (id: string) => void;
 }
 
 export const Input = {
@@ -165,6 +172,34 @@ export const Input = {
         ))}
       </div>
     )
+  },
+  VideoPreview: ({ className, files, onDelete }: VideoPreviewProps) => {
+    return (
+      <div className={twMerge('flex flex-col', className)}>
+        {files.map((file, index) => (
+          <div key={index} className="relative w-fit my-2">
+            {file.fileType === 'VIDEO' && file.uri && (
+              <ReactPlayer
+                url={file.uri}
+                width={'100%'}
+                height={'auto'}
+                playing={false} // Set to true if you want the video to autoplay
+                muted={false} // Set to true if you want the video muted
+                controls
+              />
+            )}
+            <Button
+              className="flex items-center justify-center absolute bottom-[-10px] right-[-5px] border border-zinc-100 bg-zinc-50 rounded-full h-auto p-2"
+              onClick={() => {
+                onDelete(file.id);
+              }}
+            >
+              <FiTrash size={16} className="text-red-600" />
+            </Button>
+          </div>
+        ))}
+      </div>
+    );
   },
   FilesPreview: ({ className, files, onDelete }: ImagePreviewProps) => {
     return (

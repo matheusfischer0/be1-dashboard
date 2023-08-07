@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useEffect } from 'react'
+import React, { useCallback, useEffect } from 'react'
 import { z, ZodType } from 'zod'
 import { FormProvider, useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -11,6 +11,7 @@ import Image from 'next/image'
 import { FiCornerDownRight, FiCornerUpRight, FiTrash, } from 'react-icons/fi'
 import { useRouter } from 'next/navigation'
 import { useVideo } from '@/hooks/useVideo'
+import Loading from '@/app/components/loading.component'
 
 interface EditPageProps {
   params: { id: string }
@@ -20,25 +21,27 @@ interface EditPageProps {
 const videoSchema = z.object({
   name: z.string().nonempty('O nome não pode ser vazio!'),
   description: z.string().nonempty('Uma descrição deve ser adicionada!'),
-  videoUrl: z.string(),
-  file: z.instanceof(FileList),
+  videoUrl: z.string().optional().nullable(),
+  file: z.any().optional() as ZodType<FileList | null>
 })
 
 type EditVideoFormData = z.infer<typeof videoSchema>
 
 export default function EditPage({ params }: EditPageProps) {
-  const { video, updateVideo, refetchVideo, isLoading, error } =
+  const { video, updateVideo, refetchVideo, error } =
     useVideo(params.id)
 
-  const { uploadFiles, deleteFile } = useFile({
-    queryString: `?videoId=${video?.id}`,
+  const { files: file, uploadFiles: uploadVideos, deleteFile: deleteVideo, isLoading: isLoadingFile, setInitialFiles } = useFile({
+    videoId: video?.id,
+    filePath: 'videos/files',
+    fileType: 'VIDEO',
   })
 
   const router = useRouter()
 
   const methods = useForm<EditVideoFormData>({
     resolver: zodResolver(videoSchema),
-    reValidateMode: 'onChange',
+    reValidateMode: 'onSubmit',
   })
 
   const {
@@ -49,13 +52,18 @@ export default function EditPage({ params }: EditPageProps) {
     watch,
   } = methods
 
-  const selectedFile = watch('file')
+  const selectedVideo = watch('file')
+  const handleUploadVideos = useCallback(async (videosToUpload: FileList) => {
+    await uploadVideos(videosToUpload);
+    setValue('file', null)
+    refetchVideo()
+  }, [uploadVideos]);
 
   useEffect(() => {
-    console.log("here:", selectedFile)
-    // uploadFiles(selectedFile)
-    // refetchVideo()
-  }, [selectedFile])
+    if (selectedVideo) {
+      handleUploadVideos(selectedVideo)
+    }
+  }, [selectedVideo])
 
   useEffect(() => {
     if (video) {
@@ -66,12 +74,13 @@ export default function EditPage({ params }: EditPageProps) {
       )
       setValue(
         'videoUrl',
-        video.videoUrl ? video.videoUrl : '',
+        video.videoUrl,
       )
+      if (video?.file)
+        setInitialFiles([video?.file])
     }
   }, [video, params, setValue])
 
-  if (isLoading) return <div>Loading...</div>
   if (error) return <div>An error has occurred: {error.message}</div>
 
   const onSubmit = (data: EditVideoFormData) => {
@@ -81,14 +90,19 @@ export default function EditPage({ params }: EditPageProps) {
         name: data.name,
         description: data.description,
         videoUrl: data.videoUrl,
+        file: file ? file[0] : undefined,
       })
     }
     router.push('/admin/configuracoes/videos')
   }
 
-  function handleDeleteFile(id: string) {
-    deleteFile(id)
+  function handleDeleteVideo(id: string) {
+    deleteVideo(id)
   }
+
+  const shouldRenderYoutubeLink = (file?.length === 0 || !file)
+
+  const isLoadingVideo = (file && file.length === 0 && isLoadingFile)
 
   return (
     <div className="flex-1 items-center justify-center text-zinc-900">
@@ -99,85 +113,71 @@ export default function EditPage({ params }: EditPageProps) {
           onSubmit={handleSubmit(onSubmit)}
         >
           <div className="">
-            <div className="flex flex-col gap-3 py-4">
-              <Input.Root className="w-full max-w-[750px]">
-                <Input.Label>Nome:</Input.Label>
-                <Input.Controller
-                  register={register('name')}
-                  type="text"
-                />
-                <Input.Error>
-                  {errors.name && <p>{errors.name.message?.toString()}</p>}
-                </Input.Error>
-              </Input.Root>
-              <Input.Root className="w-full max-w-[750px]">
-                <Input.Label>Descrição:</Input.Label>
-                <Input.TextAreaController register={register('description')} />
-                <Input.Error>
-                  {errors.description && (
-                    <p>{errors.description.message?.toString()}</p>
-                  )}
-                </Input.Error>
-              </Input.Root>
-
-              <div className='flex'>
-                <div className='flex-1'>
-                  <Input.Root className="w-full max-w-[750px]">
-                    <Input.Label>Adicione um video ou Link do Youtube:</Input.Label>
-                    <div className='flex items-center'>
-                      <FiCornerUpRight size={24} className="text-zinc-300" />
-                      <div className='flex-1'>
-                        <Input.FileController name="file" accept="video/*" multiple />
-                      </div>
-                    </div>
-                    <Input.Error>
-                      {errors.file && <p>{errors.file.message?.toString()}</p>}
-                    </Input.Error>
-                  </Input.Root>
-                  <Input.Root className="w-full max-w-[750px]">
-                    <div className='flex'>
-                      <FiCornerDownRight size={24} className="text-zinc-300" />
-                      <div className='flex-1'>
-                        <Input.Controller
-                          register={register('videoUrl')}
-                          type="text"
-                        />
-                      </div>
-                    </div>
-                    <Input.Error>
-                      {errors.videoUrl && (
-                        <p>{errors.videoUrl.message?.toString()}</p>
-                      )}
-                    </Input.Error>
-                  </Input.Root>
-                </div>
-
+            <div className="flex flex-col lg:flex-row gap-3 py-4">
+              <div className="flex-1">
+                <Input.Root className="w-full">
+                  <Input.Label>Nome:</Input.Label>
+                  <Input.Controller
+                    register={register('name')}
+                    type="text"
+                  />
+                  <Input.Error>
+                    {errors.name && <p>{errors.name.message?.toString()}</p>}
+                  </Input.Error>
+                </Input.Root>
+                <Input.Root className="w-full mt-2">
+                  <Input.Label>Descrição:</Input.Label>
+                  <Input.TextAreaController register={register('description')} />
+                  <Input.Error>
+                    {errors.description && (
+                      <p>{errors.description.message?.toString()}</p>
+                    )}
+                  </Input.Error>
+                </Input.Root>
               </div>
 
-              {video?.file && (
-                <div className="relative inline-block">
-                  <Button
-                    onClick={() => {
-                      video?.file?.id &&
-                        handleDeleteFile(video?.file?.id)
-                    }}
-                  >
-                    <FiTrash size={24} className="text-red-600" />
-                  </Button>
-                  {video?.file.uri && (
-                    <Image
-                      src={video?.file.uri}
-                      alt={`Video file ${video?.file?.uri}`}
-                      className="rounded-md mr-2"
-                      width={200}
-                      height={200}
-                    />
-                  )}
-                </div>
-              )}
+              <div className='flex-1'>
+                {shouldRenderYoutubeLink && <Input.Root className="w-full">
+                  <div className='flex'>
+                    <div className='flex-1'>
+                      <Input.Label className=''>Link do video (Youtube)</Input.Label>
+                      <Input.Controller
+                        register={register('videoUrl')}
+                        placeholder='Link video Youtube'
+                        type="text"
+                      />
+                    </div>
+                  </div>
+                  <Input.Error>
+                    {errors.videoUrl && (
+                      <p>{errors.videoUrl.message?.toString()}</p>
+                    )}
+                  </Input.Error>
+                </Input.Root>}
+
+                <Input.Root className="w-full">
+                  <Input.Label>Adicione um arquivo de video (.mp4)</Input.Label>
+                  <div className='flex items-center'>
+                    <div className='flex-1'>
+                      <Input.FileController name="file" accept=".mp4" />
+                    </div>
+                  </div>
+                  <Input.Error>
+                    {errors.file && <p>{errors.file.message?.toString()}</p>}
+                  </Input.Error>
+                </Input.Root>
+                {isLoadingVideo && (
+                  <Loading />
+                )}
+                {file && file?.length > 0 && (
+                  <>
+                    <Input.Label className='mt-4'>Video Selecionado</Input.Label>
+                    <Input.VideoPreview files={file} onDelete={(id) => handleDeleteVideo(id)} />
+                  </>
+                )}
+              </div>
             </div>
           </div>
-
           <div className="py-4">
             <Button
               className={`bg-gradient-to-r from-blue-600 to-blue-400 rounded-md px-4 text-white w-36 justify-center`}
@@ -186,6 +186,7 @@ export default function EditPage({ params }: EditPageProps) {
               Salvar
             </Button>
           </div>
+
         </form>
       </FormProvider>
     </div>

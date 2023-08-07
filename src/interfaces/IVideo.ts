@@ -4,7 +4,7 @@ export interface IVideo {
   id: string
   name: string
   description?: string
-  videoUrl?: string
+  videoUrl?: string | null
   file?: IFile
   createdAt?: Date
 }

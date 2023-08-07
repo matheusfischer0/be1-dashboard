@@ -2,7 +2,6 @@ import { ISession } from "@/interfaces/ISession";
 import NextAuth from "next-auth/next";
 import CredentialsProvider from "next-auth/providers/credentials";
 
-
 async function refreshAccessToken(oldSession: ISession) {
   try {
     const response = await fetch("http://localhost:3333/refresh-token", {

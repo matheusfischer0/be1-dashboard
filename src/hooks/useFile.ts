@@ -43,7 +43,7 @@ export const useFile = ({
       await http.delete(`/files/${id}`)
 
       setFiles(prevState => {
-        return prevState?.filter(item => item.id !== id)
+        return prevState ? prevState.filter(item => item.id !== id) : []
       })
 
       setIsLoading(false)
@@ -72,10 +72,9 @@ export const useFile = ({
           'Content-Type': 'multipart/form-data',
         },
       })
-      console.log("uploadedFiles", uploadedFiles)
 
       const newFiles = files ? [...files, ...uploadedFiles] : [...uploadedFiles]
-      console.log("newFiles", newFiles)
+
       setFiles(newFiles)
 
       setIsLoading(false)
