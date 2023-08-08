@@ -29,7 +29,7 @@ export const useUsers = () => {
     data: users,
     isLoading,
     error,
-  } = useQuery<IUser[], Error>('users', getUsers)
+  } = useQuery<IUser[], Error>('users', getUsers, { enabled: false })
 
   const mutationCreate = useMutation<IUser, Error, Partial<IUser>>(createUser, {
     onSuccess: () => {
