@@ -11,6 +11,7 @@ export const useUsers = () => {
     return data
   }
 
+
   const createUser = async (newUser: Partial<IUser>): Promise<IUser> => {
     const { data } = await http.post('/users/create', newUser)
     return data
