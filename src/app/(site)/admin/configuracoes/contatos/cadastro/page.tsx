@@ -42,15 +42,12 @@ export default function RegisterPage({ params }: RegisterPageProps) {
   } = methods
 
   const selectedType = watch('type')
-  console.log(selectedType)
-
-  const selectedMask = DEFAULT_MASKS.find(mask => mask.label === selectedType)?.mask ?? ''
 
   const onSubmit = async (data: CreateContactFormData) => {
-    console.log(data)
     if (data.contact) {
       createContact(data) // You will need to adjust the createContact function to handle FormData
     }
+    router.push('/admin/configuracoes/contatos')
   }
 
   if (error) return <div>An error has occurred: {error.message}</div>
@@ -84,11 +81,16 @@ export default function RegisterPage({ params }: RegisterPageProps) {
               </Input.Root>
               <Input.Root className="w-full">
                 <Input.Label>Contato:</Input.Label>
-                <Input.MaskedController
-                  register={register('contact')}
-                  mask={selectedMask}
-
-                />
+                {selectedType === 'Telefone' ?
+                  <Input.MaskedController
+                    register={register('contact')}
+                    mask={'(99) 99999-9999'}
+                  /> :
+                  <Input.Controller
+                    register={register('contact')}
+                    type="text"
+                  />
+                }
                 <Input.Error>
                   {errors.contact && <p>{errors.contact.message?.toString()}</p>}
                 </Input.Error>
