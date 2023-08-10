@@ -114,12 +114,12 @@ export const Input = {
           return (
             <Select
               ref={ref}
-              styles={{ control: () => ({ display: 'flex', border: 'none' }), }}
+              styles={{ control: () => ({ display: 'flex', border: 'none', padding: 0 }), }}
               name={name}
               options={options}
               value={activeValueInOptions}
               onChange={(val) => onChange(val?.value)}
-              className={twMerge('w-full border-2 border-gray-200 rounded-md p-2 focus:border-white', className)}
+              className={twMerge('w-full border-2 border-gray-200 rounded-md py-0.5 px-2 focus:border-white', className)}
             />
           )
         }

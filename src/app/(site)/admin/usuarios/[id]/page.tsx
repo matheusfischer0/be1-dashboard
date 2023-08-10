@@ -10,12 +10,12 @@ import { useRouter } from 'next/navigation'
 import { useCities } from '@/hooks/useCities'
 import { useUser } from '@/hooks/useUser'
 import { cpfIsComplete, cpfIsValid } from '@/lib/cpf-validator'
+import { DEFAULT_ROLES } from '@/constants/defaultRoles'
 
 interface EditPageProps {
   params: { id: string }
 }
 
-const DEFAULT_ROLES = [{ value: 'ADMIN', label: "Admin" }, { value: 'USER', label: "User" }]
 
 // Define the zod schema
 const userSchema = z.object({
@@ -29,11 +29,10 @@ const userSchema = z.object({
   }).refine(cpfIsValid, {
     message: "CPF Inválido",
   }),
-  role: z.enum(['ADMIN', 'USER']),
+  role: z.enum(['ADMIN', 'CLIENT', 'ASSISTENT', 'USER']),
 })
 
 type UpdateUserFormData = z.infer<typeof userSchema>
-
 
 export default function EditPage({ params }: EditPageProps) {
   const { user, isLoading, error, updateUser } = useUser(params.id)

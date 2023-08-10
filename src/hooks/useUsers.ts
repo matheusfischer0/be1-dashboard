@@ -3,6 +3,7 @@ import useAxiosAuth from './useAxiosAuth'
 import { IUser } from '@/interfaces/IUser'
 
 export const useUsers = () => {
+
   const http = useAxiosAuth()
   const queryClient = useQueryClient()
 
@@ -30,7 +31,7 @@ export const useUsers = () => {
     data: users,
     isLoading,
     error,
-  } = useQuery<IUser[], Error>('users', getUsers, { enabled: false })
+  } = useQuery<IUser[], Error>('users', getUsers)
 
   const mutationCreate = useMutation<IUser, Error, Partial<IUser>>(createUser, {
     onSuccess: () => {

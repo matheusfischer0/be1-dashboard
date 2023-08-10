@@ -9,6 +9,6 @@ export interface IUser extends DefaultUser {
   state?: string
   city?: string
   phone?: string
-  role: 'ADMIN' | 'USER'
+  role: 'ADMIN' | 'CLIENT' | 'ASSISTENT' | 'USER'
   password?: string
 }

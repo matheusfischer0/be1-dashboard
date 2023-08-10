@@ -12,9 +12,8 @@ import { redirect } from 'next/navigation'
 export default function Layout({ children }: { children: ReactNode }) {
   const session = useSession()
 
-  console.log(session)
-
-  if (session.status === 'unauthenticated' || session.status === 'loading') return <Loading></Loading>
+  if (session.status === 'unauthenticated' || session.status === 'loading')
+    return <Loading />
 
   return (
     <div className={`flex bg-white`}>

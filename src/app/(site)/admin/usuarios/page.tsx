@@ -14,6 +14,7 @@ import Loading from '@/app/components/loading.component'
 
 export default function Usuarios() {
   const { users, isLoading, error, deleteUser } = useUsers()
+
   const [selectedUser, setSelectedUser] = useState<IUser>()
 
   const router = useRouter()

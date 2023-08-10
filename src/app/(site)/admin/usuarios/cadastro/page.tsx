@@ -9,35 +9,25 @@ import { Input } from '@/app/components/inputs.component'
 import { useRouter } from 'next/navigation'
 import { useCities } from '@/hooks/useCities'
 import { cpfIsComplete, cpfIsValid } from '@/lib/cpf-validator'
+import { DEFAULT_ROLES } from '@/constants/defaultRoles'
 
 interface RegisterPageProps {
   params: {}
 }
-
-const DEFAULT_ROLES = [{ value: 'ADMIN', label: "Admin" }, { value: 'USER', label: "User" }]
 
 // Define the zod schema
 const userSchema = z.object({
   name: z.string().nonempty(),
   email: z.string().email('E-mail inválido'),
   phone: z.string(),
-  state: z
-    .object({ value: z.string(), label: z.string(), uf: z.string() })
-    .transform(({ uf }) => {
-      return String(uf)
-    })
-  ,
-  city: z
-    .object({ value: z.string(), label: z.string() })
-    .transform(({ label }) => {
-      return String(label)
-    }),
+  state: z.string(),
+  city: z.string(),
   cpf: z.string().refine(cpfIsComplete, {
     message: "CPF está incompleto",
   }).refine(cpfIsValid, {
     message: "CPF Inválido",
   }),
-  role: z.enum(['ADMIN', 'USER']),
+  role: z.enum(['ADMIN', 'CLIENT', 'ASSISTENT', 'USER']),
   password: z.string(),
 })
 

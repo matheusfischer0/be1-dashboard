@@ -17,7 +17,6 @@ export const cpfIsComplete = (data: string) => {
 export const cpfIsValid = (data: string) => {
   const clearCpf = data.trim().replaceAll('.', '').replaceAll('-', '')
 
-  console.log(clearCpf)
   let sum = 0;
   let remainder;
 

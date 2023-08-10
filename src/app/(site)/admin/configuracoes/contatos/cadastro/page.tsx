@@ -20,6 +20,7 @@ const Contactschema = z.object({
 })
 
 const DEFAULT_TYPES = [{ value: 'E-mail', label: "E-mail" }, { value: 'Telefone', label: "Telefone" }]
+
 const DEFAULT_MASKS = [{ label: "E-mail", mask: "" }, { label: "Telefone", mask: "(99) 99999-9999" }]
 
 type CreateContactFormData = z.infer<typeof Contactschema>
@@ -41,12 +42,14 @@ export default function RegisterPage({ params }: RegisterPageProps) {
   } = methods
 
   const selectedType = watch('type')
+  console.log(selectedType)
 
   const selectedMask = DEFAULT_MASKS.find(mask => mask.label === selectedType)?.mask ?? ''
 
   const onSubmit = async (data: CreateContactFormData) => {
+    console.log(data)
     if (data.contact) {
-      await createContact(data) // You will need to adjust the createContact function to handle FormData
+      createContact(data) // You will need to adjust the createContact function to handle FormData
     }
   }
 
@@ -58,8 +61,8 @@ export default function RegisterPage({ params }: RegisterPageProps) {
       <FormProvider {...methods}>
         <form className="flex flex-col" onSubmit={handleSubmit(onSubmit)}>
           <div className="flex">
-            <div className="flex flex-wrap gap-3">
-              <Input.Root className="flex-1 min-w-[500px]">
+            <div className="flex flex-wrap w-full gap-2 max-w-2xl">
+              <Input.Root className="w-full md:flex-1">
                 <Input.Label>Tipo de contato:</Input.Label>
                 <Input.SelectController
                   name='type'
@@ -69,7 +72,7 @@ export default function RegisterPage({ params }: RegisterPageProps) {
                   {errors.type && <p>{errors.type.message?.toString()}</p>}
                 </Input.Error>
               </Input.Root>
-              <Input.Root className="flex-1 min-w-[500px]">
+              <Input.Root className="w-full md:flex-1">
                 <Input.Label>Setor:</Input.Label>
                 <Input.Controller
                   register={register('category')}
@@ -79,11 +82,12 @@ export default function RegisterPage({ params }: RegisterPageProps) {
                   {errors.category && <p>{errors.category.message?.toString()}</p>}
                 </Input.Error>
               </Input.Root>
-              <Input.Root className="flex-1 min-w-[500px]">
+              <Input.Root className="w-full">
                 <Input.Label>Contato:</Input.Label>
                 <Input.MaskedController
                   register={register('contact')}
                   mask={selectedMask}
+
                 />
                 <Input.Error>
                   {errors.contact && <p>{errors.contact.message?.toString()}</p>}
