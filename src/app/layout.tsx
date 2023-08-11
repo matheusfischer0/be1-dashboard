@@ -5,6 +5,7 @@ import { Inter } from 'next/font/google'
 const inter = Inter({ subsets: ['latin'] })
 
 import Providers from '@/app/providers/provider.component'
+import { twMerge } from 'tailwind-merge';
 
 export const metadata: Metadata = {
   title: 'BE1 Tecnologia',
@@ -17,8 +18,8 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="en">
-      <body className={inter.className}>
+    <html lang="en" className='bg-white'>
+      <body className={twMerge(inter.className)}>
         <Providers>
           {children}
         </Providers>
