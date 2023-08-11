@@ -30,6 +30,7 @@ export default function EditPage({ params }: EditPageProps) {
   const { product, updateProduct, refetchProduct, isLoading, error } =
     useProduct(params.id)
 
+
   const { files, uploadFiles, deleteFile, setInitialFiles } = useFile({
     productId: product?.id,
     filePath: 'produtos/files',
