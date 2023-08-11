@@ -36,28 +36,28 @@ export const useToast = () => {
 
     return (
       <motion.div
-        className="fixed inset-0 flex items-center justify-center z-50"
+        className="fixed inset-0 flex items-start top-1/4 justify-center z-50"
         initial="closed"
         animate={showToast ? 'open' : 'closed'}
         variants={variants}
         transition={{ duration: 0.3 }}
       >
-        <div className="bg-white p-8 rounded-lg shadow-md">
+        <div className="bg-white p-8 rounded-lg shadow-xl border border-zinc-300">
           <p className="text-lg w-56">{message}</p>
           <div className="flex justify-between mt-4">
             {onCancel && (
               <button
-                className="px-4 py-2 text-gray-700 bg-gray-200 rounded hover:bg-gray-300"
+                className="px-8 py-2 text-gray-700 bg-gray-200 rounded hover:bg-gray-300"
                 onClick={handleCancel}
               >
-                Cancel
+                Não
               </button>
             )}
             <button
-              className="px-4 py-2 mr-2 text-white bg-red-500 rounded hover:bg-red-600"
+              className="px-8 py-2 mr-2 text-white bg-red-500 rounded hover:bg-red-600"
               onClick={handleConfirm}
             >
-              Confirm
+              Sim
             </button>
           </div>
         </div>

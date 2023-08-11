@@ -28,7 +28,7 @@ const videoSchema = z.object({
 type EditVideoFormData = z.infer<typeof videoSchema>
 
 export default function EditPage({ params }: EditPageProps) {
-  const { video, updateVideo, refetchVideo, error } =
+  const { video, updateVideo, error } =
     useVideo(params.id)
 
   const { files: file, uploadFiles: uploadVideos, deleteFile: deleteVideo, isLoading: isLoadingFile, setInitialFiles } = useFile({
@@ -53,17 +53,17 @@ export default function EditPage({ params }: EditPageProps) {
   } = methods
 
   const selectedVideo = watch('file')
+
   const handleUploadVideos = useCallback(async (videosToUpload: FileList) => {
     await uploadVideos(videosToUpload);
     setValue('file', null)
-    refetchVideo()
-  }, [uploadVideos]);
+  }, []);
 
   useEffect(() => {
     if (selectedVideo) {
       handleUploadVideos(selectedVideo)
     }
-  }, [selectedVideo, handleUploadVideos])
+  }, [selectedVideo])
 
   useEffect(() => {
     if (video) {
@@ -79,11 +79,12 @@ export default function EditPage({ params }: EditPageProps) {
       if (video?.file)
         setInitialFiles([video?.file])
     }
-  }, [video, setValue, setInitialFiles])
+  }, [video])
 
   if (error) return <div>An error has occurred: {error.message}</div>
 
   const onSubmit = (data: EditVideoFormData) => {
+    console.log("Video: ", data)
     if (data.name) {
       updateVideo({
         id: params.id,
@@ -102,7 +103,7 @@ export default function EditPage({ params }: EditPageProps) {
 
   const shouldRenderYoutubeLink = (file?.length === 0 || !file)
 
-  const isLoadingVideo = (file && file.length === 0 && isLoadingFile)
+  const isLoadingVideo = (file && file.length === 0 || isLoadingFile)
 
   return (
     <div className="flex-1 items-center justify-center text-zinc-900">

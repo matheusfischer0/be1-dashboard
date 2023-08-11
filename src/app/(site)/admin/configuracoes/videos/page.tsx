@@ -59,7 +59,7 @@ export default function Produtos() {
             href={'/admin/configuracoes/videos/cadastro'}
           >
             <BsPlusLg className="mr-2" size={24} />
-            <span className="whitespace-nowrap">Novo Produto</span>
+            <span className="whitespace-nowrap">Novo Video</span>
           </LinkButton>
         </div>
       </div>

@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useCallback, useEffect } from 'react'
+import React, { useCallback, useEffect, useState } from 'react'
 import { z, ZodType } from 'zod'
 import { FormProvider, useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -84,7 +84,7 @@ export default function RegisterPage({ params }: EditPageProps) {
 
   const shouldRenderYoutubeLink = (file?.length === 0 || !file)
 
-  const isLoadingVideo = (file && file.length === 0 && isLoadingFile)
+  const isLoadingVideo = (file && file.length === 0 || isLoadingFile)
 
   return (
     <div className="flex-1 items-center justify-center text-zinc-900">
