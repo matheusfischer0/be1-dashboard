@@ -32,7 +32,6 @@ export default function RegisterPage({ params }: EditPageProps) {
   const { createVideo, error } = useVideos()
 
   const { files: file, uploadFiles: uploadVideos, deleteFile: deleteVideo, isLoading: isLoadingFile } = useFile({
-    filePath: 'videos/files',
     fileType: 'VIDEO',
   })
 

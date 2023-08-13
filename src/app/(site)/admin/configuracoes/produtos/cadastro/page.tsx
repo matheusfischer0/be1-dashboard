@@ -30,12 +30,10 @@ export default function RegisterPage({ params }: RegisterPageProps) {
   const { createProduct, error } = useProducts()
 
   const { uploadFiles, deleteFile, files } = useFile({
-    filePath: 'produtos/files',
     fileType: 'DOCUMENT',
   })
 
   const { uploadFiles: uploadImages, deleteFile: deleteImage, files: images } = useFile({
-    filePath: 'produtos/images',
     fileType: 'IMAGE',
   })
 

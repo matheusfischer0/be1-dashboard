@@ -35,7 +35,7 @@ export default function Produtos() {
   }
 
   function handleCancelDelete() {
-    console.log('Deleted ', selectedVideo?.name)
+    console.log('Not Deleted ', selectedVideo?.name)
   }
 
   if (isLoading) return <p>Loading...</p>

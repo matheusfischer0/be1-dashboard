@@ -33,7 +33,6 @@ export default function EditPage({ params }: EditPageProps) {
 
   const { files: file, uploadFiles: uploadVideos, deleteFile: deleteVideo, isLoading: isLoadingFile, setInitialFiles } = useFile({
     videoId: video?.id,
-    filePath: 'videos/files',
     fileType: 'VIDEO',
   })
 
