@@ -4,9 +4,9 @@ import { http } from '@/lib/http-common'
 import { IFile } from '@/interfaces/IFile'
 
 interface UseUploadFileProps {
-  filePath: string,
   fileType: string,
   productId?: string,
+  assistanceId?: string,
   videoId?: string
 }
 
@@ -20,18 +20,16 @@ interface UseUploadFileResult {
 }
 
 export const useFile = ({
-  filePath,
   fileType,
   productId,
-  videoId
+  videoId,
+  assistanceId
 }: UseUploadFileProps): UseUploadFileResult => {
   const [error, setError] = useState<AxiosError | null>(null)
   const [files, setFiles] = useState<IFile[]>()
   const [isLoading, setIsLoading] = useState(false)
 
-  const filePathEncoded = encodeURIComponent(filePath)
-
-  const urlEncoded = `filePath=${filePathEncoded}&fileType=${fileType}${productId ? `&productId=${productId}` : ''}${videoId ? `&videoId=${videoId}` : ''}`
+  const urlEncoded = `fileType=${fileType}${productId ? `&productId=${productId}` : ''}${videoId ? `&videoId=${videoId}` : ''}${assistanceId ? `&assistanceId=${assistanceId}` : ''}`
 
   const setInitialFiles = (initialFiles: IFile[]) => {
     setFiles(initialFiles)

@@ -33,13 +33,11 @@ export default function EditPage({ params }: EditPageProps) {
 
   const { files, uploadFiles, deleteFile, setInitialFiles } = useFile({
     productId: product?.id,
-    filePath: 'produtos/files',
     fileType: 'DOCUMENT',
   })
 
   const { files: images, uploadFiles: uploadImages, deleteFile: deleteImage, setInitialFiles: setInitialImages } = useFile({
     productId: product?.id,
-    filePath: 'produtos/images',
     fileType: 'IMAGE',
   })
 

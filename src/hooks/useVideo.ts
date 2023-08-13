@@ -19,6 +19,7 @@ export const useVideo = (videoId: string) => {
   }
 
   const updateVideo = async (video: IVideo): Promise<IVideo> => {
+    console.log(video)
     const { data } = await http.post(
       `/videos/update/${video.id}`,
       video,
