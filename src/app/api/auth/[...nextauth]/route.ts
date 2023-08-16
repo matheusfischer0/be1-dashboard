@@ -100,7 +100,7 @@ const handler = NextAuth({
       return session;
     },
     redirect({ url, baseUrl }) {
-      return baseUrl + '/admin'
+      return '/admin'
     }
 
   },
