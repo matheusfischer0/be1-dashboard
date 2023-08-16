@@ -63,18 +63,20 @@ export default function Chamados() {
           </LinkButton>
         </div>
       </div>
-      {assistances && (
-        <Table
-          items={assistances}
-          headers={{
-            keys: ['title', 'description', 'productId', 'status'],
-            headers: ['Nome', 'Descrição', 'Produto', 'Status', 'Ações'],
-          }}
-          actions={['edit', 'delete']}
-          handleEdit={(item) => handleEdit(item)}
-          handleDelete={(item) => handleDelete(item)}
-        />
-      )}
+      <div className="overflow-y-auto">
+        {assistances && (
+          <Table
+            items={assistances}
+            headers={{
+              keys: ['title', 'description', 'productId', 'status'],
+              headers: ['Nome', 'Descrição', 'Produto', 'Status', 'Ações'],
+            }}
+            actions={['edit', 'delete']}
+            handleEdit={(item) => handleEdit(item)}
+            handleDelete={(item) => handleDelete(item)}
+          />
+        )}
+      </div>
     </div>
   )
 }

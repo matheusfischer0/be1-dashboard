@@ -11,7 +11,7 @@ export default function Header() {
   const { data: session, status } = useSession()
 
   return (
-    <header className="flex items-center justify-between text-black pt-8 pb-4 px-4 md:px-8">
+    <header className="flex items-center justify-between text-black pt-[1.6rem] pb-4 pl-6">
       <div>
         <span className="md:text-xl font-medium">
           Bem vindo, {session?.user?.name ?

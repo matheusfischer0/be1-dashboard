@@ -17,10 +17,12 @@ export default function Layout({ children }: { children: ReactNode }) {
 
   return (
     <div className={`flex bg-white`}>
-      <Sidebar />
-      <div id="main" className="flex h-screen flex-1 flex-col">
+      <div>
+        <Sidebar />
+      </div>
+      <div id="main" className="flex-1 w-full px-3 md:px-4">
         <Header />
-        <div className="flex-1 overflow-y-auto px-4 md:px-8">{children}</div>
+        <div className="flex-1">{children}</div>
       </div>
     </div>
   )

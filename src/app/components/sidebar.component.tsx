@@ -20,8 +20,8 @@ export default function Sidebar() {
     >
       <button
         id="open-close-sidebar"
-        className={`absolute bottom-[34px] right-[-3rem] flex items-center 
-        justify-center text-black bg-white w-12 h-12 rounded-r-md border border-l-0`}
+        className={`absolute top-[2rem] right-[-1.5rem] md:right-[-2rem] flex items-center 
+        justify-center text-black bg-white w-6 h-6 md:w-8 md:h-10 rounded-r-md border border-l-0`}
         onClick={() => {
           setIsOpen(!isOpen)
         }}
@@ -29,7 +29,7 @@ export default function Sidebar() {
         {!isOpen ? <VscChevronLeft size={32} /> : <VscChevronRight size={32} />}
       </button>
       <div className={`flex flex-col overflow-hidden`}>
-        <div className="p-2 h-40">
+        <div className="p-2 mb-6">
           <Image
             src="/images/BE1 - logotipo - Alta Res 1.png"
             width={120}
@@ -90,7 +90,7 @@ export default function Sidebar() {
               </span>
             </LinkButton>
             <LinkButton
-              href={'/admin/configuracoes'}
+              href={'/admin/configuracoes/contatos'}
               className={`flex items-center justify-center w-full border-b border-b-zinc-200 px-4 h-[52px] 
               ${isOpen ? '' : ' md:justify-start'} `}
               prefetch

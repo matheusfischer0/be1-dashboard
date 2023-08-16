@@ -102,7 +102,6 @@ const handler = NextAuth({
     redirect({ url, baseUrl }) {
       return '/admin'
     }
-
   },
 })
 
