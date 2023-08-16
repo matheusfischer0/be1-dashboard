@@ -23,7 +23,6 @@ const defaultRoutes = [
 
 export default function Layout({ children }: { children: ReactNode }) {
   const pathname = usePathname()
-  console.log(pathname)
 
   return (
     <div className="flex h-screen flex-1 flex-col">

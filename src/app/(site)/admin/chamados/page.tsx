@@ -54,13 +54,13 @@ export default function Chamados() {
       <div className="flex justify-between items-center pb-2">
         <div className="text-lg font-medium">Chamados</div>
         <div>
-          <LinkButton
+          {/* <LinkButton
             className="bg-gradient-to-r from-blue-600 to-blue-400 text-white px-4 py-2 rounded-full"
             href={'/admin/configuracoes/chamados/cadastro'}
           >
             <BsPlusLg className="mr-2" size={24} />
             <span className="whitespace-nowrap">Novo Produto</span>
-          </LinkButton>
+          </LinkButton> */}
         </div>
       </div>
       <div className="overflow-y-auto">
@@ -68,7 +68,7 @@ export default function Chamados() {
           <Table
             items={assistances}
             headers={{
-              keys: ['title', 'description', 'productId', 'status'],
+              keys: ['title', 'description', 'productName', 'status'],
               headers: ['Nome', 'Descrição', 'Produto', 'Status', 'Ações'],
             }}
             actions={['edit', 'delete']}

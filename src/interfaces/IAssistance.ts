@@ -3,8 +3,9 @@ export interface IAssistance {
   title: string;
   description: string;
   status: string;
-  clientId: string;
-  productId: string;
+  clientId?: string;
+  productId?: string;
+  productName?: string;
   createdBy: string;
   createdAt: Date;
 }
