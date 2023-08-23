@@ -6,6 +6,6 @@ export interface IAssistance {
   clientId?: string;
   productId?: string;
   productName?: string;
-  createdBy: string;
-  createdAt: Date;
+  createdBy?: string;
+  createdAt?: Date;
 }
