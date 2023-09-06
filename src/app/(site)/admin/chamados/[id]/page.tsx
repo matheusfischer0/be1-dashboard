@@ -45,7 +45,6 @@ export default function EditPage({ params }: EditPageProps) {
     handleSubmit,
     setValue,
     formState: { errors },
-    watch,
   } = methods
 
   useEffect(() => {
@@ -66,8 +65,9 @@ export default function EditPage({ params }: EditPageProps) {
   const onSubmit = (data: EditAssistanceFormData) => {
     if (data.title) {
       updateAssistance({ id: params.id, ...data })
+      refetchAssistance()
     }
-    router.push('/admin/configuracoes/chamados')
+    router.push('/admin/chamados')
   }
 
   return (
