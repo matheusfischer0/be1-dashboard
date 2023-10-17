@@ -7,7 +7,7 @@ export const useAssistances = () => {
   const queryClient = useQueryClient()
 
   const getAssistances = async (): Promise<IAssistance[]> => {
-    const { data } = await http.post('/assistances')
+    const { data } = await http.post('/assistances/all')
     return data
   }
 
