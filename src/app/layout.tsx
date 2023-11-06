@@ -1,29 +1,31 @@
-import './globals.css'
-import type { Metadata } from 'next'
+import "./globals.css";
+import type { Metadata } from "next";
 
-import { Inter } from 'next/font/google'
-const inter = Inter({ subsets: ['latin'] })
+import { Inter } from "next/font/google";
 
-import Providers from '@/app/providers/provider.component'
-import { twMerge } from 'tailwind-merge';
+export const inter = Inter({
+  subsets: ["latin"],
+  variable: "--font-sans",
+});
+
+import Providers from "@/app/providers/provider.component";
+import { twMerge } from "tailwind-merge";
 
 export const metadata: Metadata = {
-  title: 'BE1 Tecnologia',
-  description: 'Qualidade de vida no campo!',
-}
+  title: "BE1 Tecnologia",
+  description: "Qualidade de vida no campo!",
+};
 
 export default function RootLayout({
   children,
 }: {
-  children: React.ReactNode
+  children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className='bg-white'>
-      <body className={twMerge(inter.className)}>
-        <Providers>
-          {children}
-        </Providers>
+    <html lang="en" className="bg-white">
+      <body className={inter.className}>
+        <Providers>{children}</Providers>
       </body>
     </html>
-  )
+  );
 }

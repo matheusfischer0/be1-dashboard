@@ -1,7 +1,6 @@
 "use client";
 
-import React, { useEffect } from "react";
-import { useUsers } from "@/hooks/useUsers";
+import React, { useEffect, useState } from "react";
 import { FormProvider, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -9,8 +8,14 @@ import { Input } from "@/app/components/inputs.component";
 import { useRouter } from "next/navigation";
 import { useCities } from "@/hooks/useCities";
 import { useUser } from "@/hooks/useUser";
+import { useUsers } from "@/hooks/useUsers";
 import { cpfIsComplete, cpfIsValid } from "@/lib/cpf-validator";
 import { DEFAULT_ROLES } from "@/constants/defaultRoles";
+import { UserSelectTable } from "@/app/components/UserSelectTable.component";
+import { useQuery } from "react-query";
+import { http } from "@/lib/http-common";
+import Loading from "@/app/components/loading.component";
+import { Button } from "@/components/ui/button";
 
 interface EditPageProps {
   params: { id: string };
@@ -23,6 +28,7 @@ const userSchema = z.object({
   phone: z.string(),
   state: z.string(),
   city: z.string(),
+  clients: z.array(z.object({ id: z.string() })),
   cpf: z
     .string()
     .refine(cpfIsComplete, {
@@ -31,14 +37,32 @@ const userSchema = z.object({
     .refine(cpfIsValid, {
       message: "CPF Inválido",
     }),
-  role: z.enum(["ADMIN", "CLIENT", "ASSISTENT", "USER"]),
+  role: z.enum(["ADMIN", "CLIENT", "TECHNICIAN", "USER"]),
 });
 
 type UpdateUserFormData = z.infer<typeof userSchema>;
 
 export default function EditPage({ params }: EditPageProps) {
-  const { user, isLoading, error, updateUser } = useUser(params.id);
+  const {
+    user,
+    isLoading: isLoadingUpdate,
+    error,
+    updateUser,
+  } = useUser(params.id);
+  const { fetchUsers } = useUsers();
   const router = useRouter();
+  const page = 1; // Set your page dynamically
+
+  const [isLoading, setIsLoading] = useState(false);
+
+  const {
+    isLoading: isLoadingUsers,
+    isError,
+    error: errorUsers,
+    data: users,
+  } = useQuery(["users", { page, role: "CLIENT" }], fetchUsers, {
+    keepPreviousData: true, // Keep old data for smoother pagination transitions
+  });
 
   const methods = useForm<UpdateUserFormData>({
     resolver: zodResolver(userSchema),
@@ -50,6 +74,7 @@ export default function EditPage({ params }: EditPageProps) {
     formState: { errors },
     setValue,
     watch,
+    getValues,
   } = methods;
 
   const selectedState = watch("state");
@@ -71,21 +96,33 @@ export default function EditPage({ params }: EditPageProps) {
       if (user.phone) setValue("phone", user.phone);
       if (user.state) setValue("state", user.state);
       if (user.city) setValue("city", user.city);
+      if (user.clients) setValue("clients", user.clients);
       setValue("role", user.role);
     }
   }, [user, states, cities, params, setValue]);
 
-  if (isLoading) return <div>Loading...</div>;
   if (error) return <div>An error has occurred: {error.message}</div>;
 
-  const onSubmit = (data: UpdateUserFormData) => {
+  const onSubmit = async (data: UpdateUserFormData) => {
+    setIsLoading(true);
     if (data.name && user?.id) {
-      updateUser({
-        id: user.id,
-        ...data,
-      });
+      // updateUser({ id: user.id, ...data });
+
+      http
+        .post(`/users/update/${user.id}`, data)
+        .then((response) => {
+          console.log(response.data);
+        })
+        .finally(() => {
+          setIsLoading(false);
+          router.push("/admin/usuarios");
+        });
     }
-    router.push("/admin/usuarios");
+  };
+
+  const handleChangeSelectedRows = (data: string[]) => {
+    const mappedData = data.map((data) => ({ id: data }));
+    setValue("clients", mappedData);
   };
 
   return (
@@ -93,15 +130,15 @@ export default function EditPage({ params }: EditPageProps) {
       <div className="pb-2 text-xl font-bold">Editar Usuário</div>
       <FormProvider {...methods}>
         <form className="flex flex-col" onSubmit={handleSubmit(onSubmit)}>
-          <div className="flex flex-row flex-wrap gap-3">
-            <Input.Root className="w-full md:w-[500px]">
+          <div className="flex flex-row flex-wrap">
+            <Input.Root className="basis-4/12 p-3">
               <Input.Label>Nome:</Input.Label>
               <Input.Controller register={register("name")} type="text" />
               <Input.Error>
                 {errors.name && <p>{errors.name.message?.toString()}</p>}
               </Input.Error>
             </Input.Root>
-            <Input.Root className="w-full md:w-[500px]">
+            <Input.Root className="basis-4/12 p-3">
               <Input.Label>E-mail:</Input.Label>
               <Input.Controller register={register("email")} type="email" />
               <Input.Error>
@@ -109,7 +146,7 @@ export default function EditPage({ params }: EditPageProps) {
               </Input.Error>
             </Input.Root>
 
-            <Input.Root className="w-full md:w-[500px]">
+            <Input.Root className="basis-4/12 p-3">
               <Input.Label>Telefone:</Input.Label>
               <Input.MaskedController
                 register={register("phone")}
@@ -119,7 +156,7 @@ export default function EditPage({ params }: EditPageProps) {
                 {errors.phone && <p>{errors.phone.message?.toString()}</p>}
               </Input.Error>
             </Input.Root>
-            <Input.Root className="w-full md:w-[500px]">
+            <Input.Root className="basis-4/12 p-3">
               <Input.Label>CPF:</Input.Label>
               <Input.MaskedController
                 register={register("cpf")}
@@ -129,55 +166,55 @@ export default function EditPage({ params }: EditPageProps) {
                 {errors.cpf && <p>{errors.cpf.message?.toString()}</p>}
               </Input.Error>
             </Input.Root>
-            <Input.Root className="w-full md:w-[500px]">
+            <Input.Root className="basis-4/12 p-3">
               <Input.Label>Estado:</Input.Label>
               <Input.SelectController name="state" options={states} />
               <Input.Error>
                 {errors.state && <p>{errors.state.message?.toString()}</p>}
               </Input.Error>
             </Input.Root>
-            <Input.Root className="w-full md:w-[500px]">
+            <Input.Root className="basis-4/12 p-3">
               <Input.Label>Cidade:</Input.Label>
               <Input.SelectController name="city" options={cities} />
               <Input.Error>
                 {errors.city && <p>{errors.city.message?.toString()}</p>}
               </Input.Error>
             </Input.Root>
-            <Input.Root className="w-full md:w-[500px]">
+            <Input.Root className="basis-4/12 p-3">
               <Input.Label>Tipo de usuário:</Input.Label>
               <Input.SelectController name="role" options={DEFAULT_ROLES} />
               <Input.Error>
                 {errors.role && <p>{errors.role.message?.toString()}</p>}
               </Input.Error>
             </Input.Root>
-
-            {/* <Input.Root className="w-full md:w-[500px]">
-              <Input.Label className='flex items-center'>Senha:</Input.Label>
-              <Input.Label className='flex items-center'>
-                <Input.Icon>
-                  <MdDangerous size={44} className="text-red-400"></MdDangerous>
-                </Input.Icon>
-                <Input.Controller
-                  className="w-full max-w-2xl border border-red-400"
-                  register={register('password')}
-                  type="password"
-                />
-              </Input.Label>
-              <Input.Error>
-                {errors.password && (
-                  <p>{errors.password.message?.toString()}</p>
-                )}
-              </Input.Error>
-            </Input.Root> */}
           </div>
-
-          <div className="py-3">
-            <button
-              className="w-36 bg-blue-500 rounded-md p-3 text-white"
-              type="submit"
-            >
-              Salvar
-            </button>
+          {user?.role === "TECHNICIAN" && users && (
+            <Input.Root className="flex-1 w-full p-3">
+              <Input.Label>
+                Selecione os clientes atendidos por este técnico:
+              </Input.Label>
+              {!isLoadingUsers && (
+                <UserSelectTable
+                  data={users}
+                  columns={["select", "name", "email", "state", "city"]}
+                  onChangeSelectRow={handleChangeSelectedRows}
+                  selectedRows={getValues("clients")}
+                />
+              )}
+            </Input.Root>
+          )}
+          <div className="py-3 hover:cursor-pointer">
+            {isLoading ? (
+              <Loading></Loading>
+            ) : (
+              <Button
+                className="bg-blue-500 w-32 text-white "
+                variant={"default"}
+                type="submit"
+              >
+                Salvar
+              </Button>
+            )}
           </div>
         </form>
       </FormProvider>

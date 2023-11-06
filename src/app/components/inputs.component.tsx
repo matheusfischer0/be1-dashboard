@@ -1,53 +1,54 @@
-import { HTMLAttributes, ReactNode } from 'react'
+import { HTMLAttributes, ReactNode } from "react";
 import {
   Controller,
   UseFormRegisterReturn,
   useFormContext,
-} from 'react-hook-form'
-import { twMerge } from 'tailwind-merge'
-import Select, { Props as SelectProps } from 'react-select'
+} from "react-hook-form";
+import { twMerge } from "tailwind-merge";
+import Select, { Props as SelectProps } from "react-select";
 
-import ReactPlayer from 'react-player';
-import InputMask from 'react-input-mask'
-import Image from 'next/image'
-import { Button } from './buttons.component'
-import { FiTrash } from 'react-icons/fi'
-import { RiPagesLine } from 'react-icons/ri'
+import ReactPlayer from "react-player";
+import InputMask from "react-input-mask";
+import Image from "next/image";
+import { Button } from "./buttons.component";
+import { FiTrash } from "react-icons/fi";
+import { RiPagesLine } from "react-icons/ri";
 
-import FileInput from './Input/FileInput'
-import { IFile } from '@/interfaces/IFile'
+import FileInput from "./Input/FileInput";
+import { IFile } from "@/interfaces/IFile";
+import { convertRoleToPortuguese } from "@/lib/utils/convertRoleToPortuguese";
 
 interface MaskedInputProps extends HTMLAttributes<HTMLDivElement> {
-  register: UseFormRegisterReturn
-  mask: string
+  register: UseFormRegisterReturn;
+  mask: string;
 }
 
 interface SelectInputProps extends SelectProps<any> {
-  name: string
-  options?: { value: string; label: string }[]
+  name: string;
+  options?: { value: string; label: string }[];
 }
 
 interface DivProps extends HTMLAttributes<HTMLDivElement> {
-  children: ReactNode
+  children: ReactNode;
 }
 
 interface ControllerProps extends HTMLAttributes<HTMLInputElement> {
-  register: UseFormRegisterReturn
-  type: string
+  register: UseFormRegisterReturn;
+  type: string;
 }
 
 interface FileInputProps extends HTMLAttributes<HTMLInputElement> {
-  name: string
-  multiple?: boolean
-  accept?: string
+  name: string;
+  multiple?: boolean;
+  accept?: string;
 }
 
 interface TextAreaControllerProps extends HTMLAttributes<HTMLTextAreaElement> {
-  register: UseFormRegisterReturn
+  register: UseFormRegisterReturn;
 }
 interface ImagePreviewProps extends HTMLAttributes<HTMLDivElement> {
-  files: IFile[]
-  onDelete: (id: string) => void
+  files: IFile[];
+  onDelete: (id: string) => void;
 }
 
 interface VideoPreviewProps extends HTMLAttributes<HTMLDivElement> {
@@ -61,7 +62,7 @@ export const Input = {
   ),
 
   Label: ({ className, children }: DivProps) => (
-    <div className={className}>{children}</div>
+    <div className={twMerge("pb-3", className)}>{children}</div>
   ),
 
   Error: ({ className, children }: DivProps) => (
@@ -72,11 +73,15 @@ export const Input = {
     <div className={className}>{children}</div>
   ),
 
-  Controller: ({ register, type, className }: ControllerProps) => (
+  Controller: ({ register, type, className, ...props }: ControllerProps) => (
     <input
-      className={twMerge('w-full border-2 border-gray-200 rounded-md p-2 focus:border-white', className)}
+      className={twMerge(
+        "w-full border border-gray-200 rounded-md p-2 focus:border-white",
+        className
+      )}
       type={type}
       {...register}
+      {...props}
     />
   ),
 
@@ -86,7 +91,10 @@ export const Input = {
     ...rest
   }: TextAreaControllerProps) => (
     <textarea
-      className={twMerge('w-full border-2 border-gray-200 rounded-md p-2 focus:border-white', className)}
+      className={twMerge(
+        "w-full border border-gray-200 rounded-md p-2 focus:border-white",
+        className
+      )}
       rows={3}
       {...register}
       {...rest}
@@ -97,39 +105,90 @@ export const Input = {
     return (
       <InputMask
         mask={mask}
-        className={twMerge('w-full border-2 border-gray-200 rounded-md p-2 focus:border-white', className)}
+        className={twMerge(
+          "w-full border border-gray-200 rounded-md p-2 focus:border-white",
+          className
+        )}
         {...register}
       />
-    )
+    );
   },
 
   SelectController: ({ name, options, className }: SelectInputProps) => {
-    const { control } = useFormContext()
+    const { control } = useFormContext();
     return (
       <Controller
         name={name}
         control={control}
         render={({ field: { onChange, value, name, ref } }) => {
-          const activeValueInOptions = options?.find(item => item.value === value)
+          const activeValueInOptions = options?.find(
+            (item) => item.value === value
+          );
           return (
             <Select
               ref={ref}
-              styles={{ control: () => ({ display: 'flex', border: 'none', padding: 0 }), }}
+              styles={{
+                control: () => ({
+                  display: "flex",
+                  border: "none",
+                  padding: 0,
+                }),
+              }}
               name={name}
               options={options}
               value={activeValueInOptions}
               onChange={(val) => onChange(val?.value)}
-              className={twMerge('w-full border-2 border-gray-200 rounded-md py-0.5 px-2 focus:border-white', className)}
+              className={twMerge(
+                "w-full border border-gray-200 rounded-md py-0.5 px-2 focus:border-white",
+                className
+              )}
             />
-          )
-        }
-        }
+          );
+        }}
       />
-    )
+    );
+  },
+
+  SearchableSelectController: ({
+    name,
+    options,
+    className,
+  }: SelectInputProps) => {
+    const { control } = useFormContext();
+    return (
+      <Controller
+        name={name}
+        control={control}
+        render={({ field: { onChange, value, name, ref } }) => {
+          return (
+            <Select
+              ref={ref}
+              isMulti
+              isSearchable
+              styles={{
+                control: () => ({
+                  display: "flex",
+                  border: "none",
+                  padding: 0,
+                }),
+              }}
+              name={name}
+              options={options}
+              value={value}
+              onChange={(vals) => onChange(vals || [])}
+              className={twMerge(
+                `w-full border border-gray-200 rounded-md py-0.5 px-2 focus:border-white`,
+                className
+              )}
+            />
+          );
+        }}
+      />
+    );
   },
 
   FileController: ({ name, multiple, ...props }: FileInputProps) => {
-    const { control } = useFormContext()
+    const { control } = useFormContext();
     return (
       <Controller
         name={name}
@@ -143,18 +202,26 @@ export const Input = {
           />
         )}
       />
-    )
+    );
   },
 
   ImagesPreview: ({ className, files, onDelete }: ImagePreviewProps) => {
     return (
-      <div className={twMerge('flex flex-wrap gap-x-4 gap-y-8 w-full mt-4', className)}>
+      <div
+        className={twMerge(
+          "flex flex-wrap gap-x-4 gap-y-8 w-full mt-4",
+          className
+        )}
+      >
         {files.map((file, index) => (
-          <div key={index} className="flex items-center justify-center w-36 h-32 relative">
+          <div
+            key={index}
+            className="flex items-center justify-center w-36 h-32 relative"
+          >
             <Button
-              className='flex items-center justify-center absolute bottom-[-10px] right-[-5px] border border-zinc-100 bg-zinc-50 rounded-full h-auto p-2'
+              className="flex items-center justify-center absolute bottom-[-10px] right-[-5px] border border-zinc-100 bg-zinc-50 rounded-full h-auto p-2"
               onClick={() => {
-                onDelete(file.id)
+                onDelete(file.id);
               }}
             >
               <FiTrash size={16} className="text-red-600" />
@@ -171,18 +238,18 @@ export const Input = {
           </div>
         ))}
       </div>
-    )
+    );
   },
   VideoPreview: ({ className, files, onDelete }: VideoPreviewProps) => {
     return (
-      <div className={twMerge('flex flex-col', className)}>
+      <div className={twMerge("flex flex-col", className)}>
         {files.map((file, index) => (
           <div key={index} className="relative w-fit my-2">
-            {file.fileType === 'VIDEO' && file.uri && (
+            {file.fileType === "VIDEO" && file.uri && (
               <ReactPlayer
                 url={file.uri}
-                width={'100%'}
-                height={'auto'}
+                width={"100%"}
+                height={"auto"}
                 playing={false} // Set to true if you want the video to autoplay
                 muted={false} // Set to true if you want the video muted
                 controls
@@ -203,30 +270,29 @@ export const Input = {
   },
   FilesPreview: ({ className, files, onDelete }: ImagePreviewProps) => {
     return (
-      <div className={twMerge('w-full mt-4', className)}>
+      <div className={twMerge("w-full mt-4", className)}>
         {files.map((file, index) => (
-          <div key={index} className="flex items-center p-3 w-full relative rounded-xl border border-zinc-100 shadow-md">
+          <div
+            key={index}
+            className="flex items-center p-3 w-full relative rounded-xl border border-zinc-100 shadow-md"
+          >
             <Button
-              className='flex items-center justify-center absolute bottom-[-5px] right-[-5px] border border-zinc-100 bg-zinc-50 rounded-full h-auto p-2'
+              className="flex items-center justify-center absolute bottom-[-5px] right-[-5px] border border-zinc-100 bg-zinc-50 rounded-full h-auto p-2"
               onClick={() => {
-                onDelete(file.id)
+                onDelete(file.id);
               }}
             >
               <FiTrash size={16} className="text-red-600" />
             </Button>
             <div className="flex flex-row items-center">
-              {file.uri && (
-                <RiPagesLine size={36}
-                  className="text-zinc-600"
-                />
+              {file.uri && <RiPagesLine size={36} className="text-zinc-600" />}
+              {file.originalName && (
+                <span className="pl-2 text-xs">{file.originalName}</span>
               )}
-              {file.originalName && <span className='pl-2 text-xs'>
-                {file.originalName}
-              </span>}
             </div>
           </div>
         ))}
       </div>
-    )
+    );
   },
-}
+};
