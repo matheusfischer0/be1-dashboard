@@ -88,6 +88,7 @@ export default function EditPage({ params }: EditPageProps) {
 
   useEffect(() => {
     if (user) {
+      console.log("user", user);
       setValue("name", user.name);
       setValue("email", user.email);
       if (user.cpf) setValue("cpf", user.cpf);
@@ -108,8 +109,13 @@ export default function EditPage({ params }: EditPageProps) {
     if (data.name && user?.id) {
       // updateUser({ id: user.id, ...data });
 
+      const updatedUser = {
+        ...user,
+        ...data,
+      };
+
       http
-        .post(`/users/update/${user.id}`, data)
+        .post(`/users/update/${user.id}`, updatedUser)
         .then((response) => {
           console.log(response.data);
         })
