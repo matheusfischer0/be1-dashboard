@@ -8,7 +8,6 @@ import useAxiosAuth from "./useAxiosAuth";
 import { IUser } from "@/interfaces/IUser";
 
 interface QueryParams {
-  page: number;
   name?: string;
   email?: string;
   role?: string;
@@ -26,9 +25,8 @@ export const useUsers = () => {
   async function fetchUsers({
     queryKey,
   }: QueryFunctionContext<["users", QueryParams]>) {
-    const [_key, { page, name, email, role }] = queryKey;
+    const [_key, { name, email, role }] = queryKey;
     const { data } = await http.post<any>("/users", {
-      page,
       name,
       email,
       role,

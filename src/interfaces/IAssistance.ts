@@ -13,6 +13,7 @@ export interface IAssistance {
   files: IFile[];
   clientId: string;
   client: IUser;
+  clientName?: string;
   technicianId?: string;
   technician?: IUser;
   chatId?: string;

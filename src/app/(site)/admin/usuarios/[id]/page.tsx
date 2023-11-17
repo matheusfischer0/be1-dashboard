@@ -16,10 +16,100 @@ import { useQuery } from "react-query";
 import { http } from "@/lib/http-common";
 import Loading from "@/app/components/loading.component";
 import { Button } from "@/components/ui/button";
+import { DynamicTable } from "@/app/components/tables/dynamicTable.component";
+import { IUser } from "@/interfaces/IUser";
+import { ColumnDef } from "@tanstack/react-table";
+import { Checkbox } from "@/components/ui/checkbox";
+import { CaretSortIcon } from "@radix-ui/react-icons";
 
 interface EditPageProps {
   params: { id: string };
 }
+
+function updateSelectedRows(
+  rowId: string,
+  isSelected: boolean,
+  setSelectedRows: React.Dispatch<React.SetStateAction<string[]>>
+) {
+  setSelectedRows((prev) => {
+    const newSelectedRows = new Set(prev);
+    if (isSelected) {
+      newSelectedRows.add(rowId);
+    } else {
+      newSelectedRows.delete(rowId);
+    }
+    return Array.from(newSelectedRows);
+  });
+}
+
+interface IColumnsFieldsProps {
+  onEditRow?: (user: IUser) => void;
+  onDeleteRow?: (user: IUser) => void;
+  setSelectedRows: React.Dispatch<React.SetStateAction<string[]>>;
+}
+
+export const columnsFields = ({
+  onEditRow,
+  onDeleteRow,
+  setSelectedRows,
+}: IColumnsFieldsProps): ColumnDef<IUser>[] => [
+  {
+    id: "select",
+    header: ({ table }) => (
+      <Checkbox
+        checked={table.getIsAllPageRowsSelected()}
+        onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
+        aria-label="Select all"
+      />
+    ),
+    cell: ({ row }) => (
+      <Checkbox
+        checked={row.getIsSelected()}
+        onCheckedChange={(value) => {
+          row.toggleSelected(!!value);
+          updateSelectedRows(row.id, !!value, setSelectedRows);
+        }}
+        aria-label="Select row"
+      />
+    ),
+    enableSorting: false,
+    enableHiding: false,
+  },
+  {
+    accessorKey: "name",
+    header: "Nome",
+    cell: ({ row }) => <div className="capitalize">{row.getValue("name")}</div>,
+  },
+  {
+    accessorKey: "email",
+    header: ({ column }) => {
+      return (
+        <Button
+          variant="ghost"
+          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+        >
+          Email
+          <CaretSortIcon className="ml-2 h-4 w-4" />
+        </Button>
+      );
+    },
+    cell: ({ row }) => <div className="lowercase">{row.getValue("email")}</div>,
+  },
+  {
+    accessorKey: "state",
+    enableHiding: true,
+    header: "Estado",
+    cell: ({ row }) => (
+      <div className="capitalize">{row.getValue("state")}</div>
+    ),
+  },
+  {
+    accessorKey: "city",
+    enableHiding: true,
+    header: "Cidade",
+    cell: ({ row }) => <div className="capitalize">{row.getValue("city")}</div>,
+  },
+];
 
 // Define the zod schema
 const userSchema = z.object({
@@ -51,16 +141,16 @@ export default function EditPage({ params }: EditPageProps) {
   } = useUser(params.id);
   const { fetchUsers } = useUsers();
   const router = useRouter();
-  const page = 1; // Set your page dynamically
 
   const [isLoading, setIsLoading] = useState(false);
+  const [selectedRows, setSelectedRows] = useState<string[]>([]);
 
   const {
     isLoading: isLoadingUsers,
     isError,
     error: errorUsers,
     data: users,
-  } = useQuery(["users", { page, role: "CLIENT" }], fetchUsers, {
+  } = useQuery(["users", { role: "CLIENT" }], fetchUsers, {
     keepPreviousData: true, // Keep old data for smoother pagination transitions
   });
 
@@ -97,7 +187,10 @@ export default function EditPage({ params }: EditPageProps) {
       if (user.phone) setValue("phone", user.phone);
       if (user.state) setValue("state", user.state);
       if (user.city) setValue("city", user.city);
-      if (user.clients) setValue("clients", user.clients);
+      if (user.clients) {
+        setValue("clients", user.clients);
+        setSelectedRows(user.clients.map((c) => c.id));
+      }
       setValue("role", user.role);
     }
   }, [user, states, cities, params, setValue]);
@@ -134,6 +227,7 @@ export default function EditPage({ params }: EditPageProps) {
   return (
     <div className="flex-1 items-center justify-center text-zinc-900">
       <div className="pb-2 text-xl font-bold">Editar Usuário</div>
+
       <FormProvider {...methods}>
         <form className="flex flex-col" onSubmit={handleSubmit(onSubmit)}>
           <div className="flex flex-row flex-wrap">
@@ -200,11 +294,12 @@ export default function EditPage({ params }: EditPageProps) {
                 Selecione os clientes atendidos por este técnico:
               </Input.Label>
               {!isLoadingUsers && (
-                <UserSelectTable
+                <DynamicTable<IUser>
                   data={users}
-                  columns={["select", "name", "email", "state", "city"]}
-                  onChangeSelectRow={handleChangeSelectedRows}
-                  selectedRows={getValues("clients")}
+                  columns={columnsFields({
+                    setSelectedRows,
+                  })}
+                  searchByPlaceholder={"Procurar..."}
                 />
               )}
             </Input.Root>

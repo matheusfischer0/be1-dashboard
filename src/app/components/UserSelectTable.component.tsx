@@ -1,16 +1,10 @@
 "use client";
 
 import * as React from "react";
-import {
-  CaretSortIcon,
-  ChevronDownIcon,
-  DotsHorizontalIcon,
-} from "@radix-ui/react-icons";
+import { CaretSortIcon, DotsHorizontalIcon } from "@radix-ui/react-icons";
 import {
   ColumnDef,
   ColumnFiltersState,
-  OnChangeFn,
-  RowSelectionState,
   SortingState,
   VisibilityState,
   flexRender,
@@ -25,7 +19,6 @@ import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
   DropdownMenu,
-  DropdownMenuCheckboxItem,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuLabel,
@@ -41,9 +34,6 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { data } from "autoprefixer";
-import { IUser } from "@/interfaces/IUser";
-import { table } from "console";
 
 export type TableTypes = {
   id: string;
@@ -249,7 +239,7 @@ export function UserSelectTable({
       </div>
       <div className="rounded-md border">
         <Table>
-          <TableHeader>
+          <TableHeader className="bg-gradient-to-r from-zinc-50 to-zinc-100 rounded-xl">
             {table.getHeaderGroups().map((headerGroup) => (
               <TableRow key={headerGroup.id}>
                 {headerGroup.headers.map((header) => {

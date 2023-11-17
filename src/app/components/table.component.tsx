@@ -1,17 +1,19 @@
-import React, { HTMLAttributes, JSX } from 'react'
-import { BiEdit, BiTrash } from 'react-icons/bi'
+import { formatDate, isValidDateTime } from "@/lib/date-functions";
+import { format } from "date-fns";
+import React, { HTMLAttributes, JSX } from "react";
+import { BiEdit, BiTrash } from "react-icons/bi";
 
 interface HeaderProps<T> {
-  headers: string[]
-  keys: (keyof T)[]
+  headers: string[];
+  keys: (keyof T)[];
 }
 
 interface TableProps<T> {
-  items: T[]
-  headers: HeaderProps<T>
-  actions?: ('edit' | 'delete')[]
-  handleEdit?: (item: T) => void
-  handleDelete?: (item: T) => void
+  items: T[];
+  headers: HeaderProps<T>;
+  actions?: ("edit" | "delete")[];
+  handleEdit?: (item: T) => void;
+  handleDelete?: (item: T) => void;
 }
 
 function Table<T extends Record<string, any>>({
@@ -21,13 +23,12 @@ function Table<T extends Record<string, any>>({
   handleEdit,
   handleDelete,
 }: TableProps<T>): JSX.Element {
-
-  function handleClickOnAction(action: 'edit' | 'delete', item: T) {
-    if (action === 'edit' && handleEdit) {
-      return handleEdit(item)
+  function handleClickOnAction(action: "edit" | "delete", item: T) {
+    if (action === "edit" && handleEdit) {
+      return handleEdit(item);
     }
-    if (action === 'delete' && handleDelete) {
-      return handleDelete(item)
+    if (action === "delete" && handleDelete) {
+      return handleDelete(item);
     }
   }
 
@@ -44,7 +45,7 @@ function Table<T extends Record<string, any>>({
       </thead>
       <tbody className="bg-white">
         {items?.map((item, idx) => (
-          <tr key={idx} className={`${idx % 2 === 1 ? 'bg-gray-100' : ''}`}>
+          <tr key={idx} className={`${idx % 2 === 1 ? "bg-gray-100" : ""}`}>
             {keys.map((key, idx) => (
               <td className={`px-4 py-2`} key={idx}>
                 <Cell value={item[key]} />
@@ -57,7 +58,7 @@ function Table<T extends Record<string, any>>({
                   value={action}
                   action={action}
                   onClick={() => {
-                    handleClickOnAction(action, item)
+                    handleClickOnAction(action, item);
                   }}
                 />
               ))}
@@ -66,33 +67,37 @@ function Table<T extends Record<string, any>>({
         ))}
       </tbody>
     </table>
-  )
+  );
 }
 
-export default Table
+export default Table;
 
 interface CellProps extends HTMLAttributes<HTMLButtonElement> {
-  value: string | number
-  action?: 'edit' | 'delete'
-  onClick?: () => void
+  value: string | number;
+  action?: "edit" | "delete";
+  onClick?: () => void;
 }
 
 function Cell({ value, action, onClick, ...rest }: CellProps): JSX.Element {
-  if (action === 'edit') {
+  if (action === "edit") {
     return (
       <button className="flex-1" onClick={onClick} {...rest}>
         <BiEdit className="text-zinc-700" size={24} />
       </button>
-    )
+    );
   }
 
-  if (action === 'delete') {
+  if (action === "delete") {
     return (
       <button className="flex-1 mx-2" onClick={onClick} {...rest}>
         <BiTrash className="text-red-500" size={24} />
       </button>
-    )
+    );
   }
 
-  return <div className="flex-1">{value}</div>
+  if (typeof value === "string" && isValidDateTime(value)) {
+    return <div className="flex-1">{formatDate(value)}</div>;
+  }
+
+  return <div className="flex-1">{value}</div>;
 }
