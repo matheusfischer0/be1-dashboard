@@ -6,7 +6,7 @@ interface EditableCellProps {
   row: {
     getValue: (columnName: string) => string;
     id: string;
-    original: { id?: string };
+    original: any;
   };
   onChangeRow: (serviceOption: IServiceOption) => void;
 }
@@ -15,7 +15,7 @@ const EditableCell: React.FC<EditableCellProps> = ({ row, onChangeRow }) => {
   const [value, setValue] = useState(row.getValue("description"));
 
   const handleBlur = () => {
-    onChangeRow && onChangeRow({ id: row.original.id, description: value });
+    onChangeRow && onChangeRow({ ...row.original, description: value });
   };
 
   return (

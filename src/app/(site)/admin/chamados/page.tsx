@@ -42,7 +42,7 @@ interface IColumnsFieldsProps {
   setSelectedRows: React.Dispatch<React.SetStateAction<string[]>>;
 }
 
-export const columnsFields = ({
+const columnsFields = ({
   onEditRow,
   onDeleteRow,
   setSelectedRows,
@@ -210,15 +210,9 @@ export const columnsFields = ({
 ];
 
 export default function Chamados() {
-  const {
-    assistances: items,
-    isLoading,
-    error,
-    deleteAssistance,
-  } = useAssistances();
+  const { assistances, isLoading, error, deleteAssistance } = useAssistances();
   const [selectedAssistance, setSelectedAssistance] = useState<IAssistance>();
   const [selectedRows, setSelectedRows] = useState<string[]>([]);
-  const assistances = items?.concat(items).concat(items);
 
   const router = useRouter();
   const { Toast, openToast } = useToast();

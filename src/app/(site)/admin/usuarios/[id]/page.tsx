@@ -11,7 +11,6 @@ import { useUser } from "@/hooks/useUser";
 import { useUsers } from "@/hooks/useUsers";
 import { cpfIsComplete, cpfIsValid } from "@/lib/cpf-validator";
 import { DEFAULT_ROLES } from "@/constants/defaultRoles";
-import { UserSelectTable } from "@/app/components/UserSelectTable.component";
 import { useQuery } from "react-query";
 import { http } from "@/lib/http-common";
 import Loading from "@/app/components/loading.component";
@@ -48,7 +47,7 @@ interface IColumnsFieldsProps {
   setSelectedRows: React.Dispatch<React.SetStateAction<string[]>>;
 }
 
-export const columnsFields = ({
+const columnsFields = ({
   onEditRow,
   onDeleteRow,
   setSelectedRows,

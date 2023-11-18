@@ -50,7 +50,7 @@ interface IColumnsFieldsProps {
   setSelectedRows: React.Dispatch<React.SetStateAction<string[]>>;
 }
 
-export const columnsFields = ({
+const columnsFields = ({
   onEditRow,
   onDeleteRow,
   setSelectedRows,

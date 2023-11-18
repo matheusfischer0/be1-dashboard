@@ -12,16 +12,8 @@ import { IServiceOption } from "@/interfaces/IService";
 
 import { ColumnDef } from "@tanstack/react-table";
 import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
 import { CaretSortIcon, DotsHorizontalIcon } from "@radix-ui/react-icons";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+
 import { useServices } from "@/hooks/useServices";
 import { useToast } from "@/app/components/toast.component";
 import { FiTrash } from "react-icons/fi";
@@ -33,7 +25,7 @@ interface IColumnsFieldsProps {
   onMoveDown?: (option: IServiceOption) => void;
 }
 
-export const columnsFields = ({
+const columnsFields = ({
   onEditRow,
   onDeleteRow,
   onMoveUp,

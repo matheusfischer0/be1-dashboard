@@ -29,7 +29,7 @@ interface IColumnsFieldsProps {
   onMoveDown?: (option: IServiceOption) => void;
 }
 
-export const columnsFields = ({
+const columnsFields = ({
   onEditRow,
   onDeleteRow,
   onMoveUp,
