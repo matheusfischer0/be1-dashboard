@@ -175,6 +175,7 @@ export function DynamicTable<T extends { id?: string }>({
           className=""
           value={pageSize}
           onChange={(e) => {
+            setPageIndex(0);
             setPageSize(Number(e.target.value));
           }}
         >
