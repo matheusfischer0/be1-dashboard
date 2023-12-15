@@ -2,7 +2,7 @@ import { format, isValid } from "date-fns";
 
 export const formatDate = (dateString: string) => {
   const parsedDate = new Date(dateString);
-  return format(parsedDate, "dd/MM/yyyy");
+  return format(parsedDate.valueOf(), "dd/MM/yyyy");
 };
 
 export const isValidDateTime = (dateTimeString: string) => {

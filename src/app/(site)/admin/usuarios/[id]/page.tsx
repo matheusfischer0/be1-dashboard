@@ -17,9 +17,10 @@ import Loading from "@/app/components/loading.component";
 import { Button } from "@/components/ui/button";
 import { DynamicTable } from "@/app/components/tables/dynamicTable.component";
 import { IUser } from "@/interfaces/IUser";
-import { ColumnDef } from "@tanstack/react-table";
+import { ColumnDef, RowSelectionState } from "@tanstack/react-table";
 import { Checkbox } from "@/components/ui/checkbox";
 import { CaretSortIcon } from "@radix-ui/react-icons";
+import { AddProductToClientForm } from "@/app/components/forms/addProductToClient.component";
 
 interface EditPageProps {
   params: { id: string };
@@ -47,7 +48,7 @@ interface IColumnsFieldsProps {
   setSelectedRows: React.Dispatch<React.SetStateAction<string[]>>;
 }
 
-const columnsFields = ({
+const linkClientsColumnsFields = ({
   onEditRow,
   onDeleteRow,
   setSelectedRows,
@@ -66,7 +67,7 @@ const columnsFields = ({
         checked={row.getIsSelected()}
         onCheckedChange={(value) => {
           row.toggleSelected(!!value);
-          updateSelectedRows(row.id, !!value, setSelectedRows);
+          updateSelectedRows(row.original.id, !!value, setSelectedRows);
         }}
         aria-label="Select row"
       />
@@ -131,13 +132,20 @@ const userSchema = z.object({
 
 type UpdateUserFormData = z.infer<typeof userSchema>;
 
+const mapClientsToRowSelectionState = (
+  clients: Array<{ id: string }>
+): RowSelectionState => {
+  const selectionState: RowSelectionState = {};
+
+  clients.forEach((client) => {
+    selectionState[client.id] = true;
+  });
+
+  return selectionState;
+};
+
 export default function EditPage({ params }: EditPageProps) {
-  const {
-    user,
-    isLoading: isLoadingUpdate,
-    error,
-    updateUser,
-  } = useUser(params.id);
+  const { user, isLoading: isLoadingUpdate, error } = useUser(params.id);
   const { fetchUsers } = useUsers();
   const router = useRouter();
 
@@ -146,7 +154,6 @@ export default function EditPage({ params }: EditPageProps) {
 
   const {
     isLoading: isLoadingUsers,
-    isError,
     error: errorUsers,
     data: users,
   } = useQuery(["users", { role: "CLIENT" }], fetchUsers, {
@@ -177,7 +184,7 @@ export default function EditPage({ params }: EditPageProps) {
 
   useEffect(() => {
     if (user) {
-      console.log("user", user);
+      console.log("setup", user);
       setValue("name", user.name);
       setValue("email", user.email);
       if (user.cpf) setValue("cpf", user.cpf);
@@ -188,7 +195,9 @@ export default function EditPage({ params }: EditPageProps) {
       if (user.city) setValue("city", user.city);
       if (user.clients) {
         setValue("clients", user.clients);
-        setSelectedRows(user.clients.map((c) => c.id));
+        // Set initial selected rows based on user's clients
+        const clientIds = user.clients.map((client) => client.id);
+        setSelectedRows(clientIds);
       }
       setValue("role", user.role);
     }
@@ -199,11 +208,10 @@ export default function EditPage({ params }: EditPageProps) {
   const onSubmit = async (data: UpdateUserFormData) => {
     setIsLoading(true);
     if (data.name && user?.id) {
-      // updateUser({ id: user.id, ...data });
-
       const updatedUser = {
         ...user,
         ...data,
+        clients: mapSelectedRows(selectedRows),
       };
 
       http
@@ -218,9 +226,8 @@ export default function EditPage({ params }: EditPageProps) {
     }
   };
 
-  const handleChangeSelectedRows = (data: string[]) => {
-    const mappedData = data.map((data) => ({ id: data }));
-    setValue("clients", mappedData);
+  const mapSelectedRows = (data: string[]) => {
+    return data.map((item) => ({ id: item }));
   };
 
   return (
@@ -295,13 +302,27 @@ export default function EditPage({ params }: EditPageProps) {
               {!isLoadingUsers && (
                 <DynamicTable<IUser>
                   data={users}
-                  columns={columnsFields({
+                  columns={linkClientsColumnsFields({
                     setSelectedRows,
                   })}
+                  selectedRows={selectedRows}
                   searchByPlaceholder={"Procurar..."}
                 />
               )}
             </Input.Root>
+          )}
+          {!isLoadingUsers ? (
+            user?.role === "CLIENT" &&
+            users && (
+              <>
+                <h3 className="text-lg text-black mb-2">
+                  Adicione produtos ao cliente:
+                </h3>
+                <AddProductToClientForm productsOnClient={user.products} />
+              </>
+            )
+          ) : (
+            <Loading></Loading>
           )}
           <div className="py-3 hover:cursor-pointer">
             {isLoading ? (

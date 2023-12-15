@@ -16,7 +16,7 @@ import { RiPagesLine } from "react-icons/ri";
 
 import FileInput from "./Input/FileInput";
 import { IFile } from "@/interfaces/IFile";
-import { convertRoleToPortuguese } from "@/lib/utils/convertRoleToPortuguese";
+import { TuiDatePicker } from "nextjs-tui-date-picker";
 
 interface MaskedInputProps extends HTMLAttributes<HTMLDivElement> {
   register: UseFormRegisterReturn;
@@ -26,6 +26,10 @@ interface MaskedInputProps extends HTMLAttributes<HTMLDivElement> {
 interface SelectInputProps extends SelectProps<any> {
   name: string;
   options?: { value: string; label: string }[];
+}
+interface DateInputProps {
+  name: string;
+  value: string;
 }
 
 interface DivProps extends HTMLAttributes<HTMLDivElement> {

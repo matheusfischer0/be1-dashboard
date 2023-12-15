@@ -1,8 +1,9 @@
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import {
   ColumnDef,
   ColumnFiltersState,
   FilterFn,
+  RowSelectionState,
   SortingFn,
   SortingState,
   flexRender,
@@ -74,12 +75,14 @@ const fuzzySort: SortingFn<any> = (rowA, rowB, columnId) => {
 interface DynamicTableProps<T extends object> {
   data: T[];
   columns: ColumnDef<T>[];
+  selectedRows?: string[];
   searchByPlaceholder?: string;
 }
 
 export function DynamicTable<T extends { id?: string }>({
   data,
   columns,
+  selectedRows = [],
   searchByPlaceholder,
 }: DynamicTableProps<T>) {
   const [sorting, setSorting] = useState<SortingState>([]);
@@ -89,6 +92,15 @@ export function DynamicTable<T extends { id?: string }>({
   const [globalFilter, setGlobalFilter] = useState("");
   const [pageIndex, setPageIndex] = useState(0);
   const [pageSize, setPageSize] = useState(8); // You can adjust the default page size
+
+  // Convert selectedRows array to RowSelectionState format
+  const initialRowSelectionState = useMemo(() => {
+    return selectedRows.reduce((acc, rowId) => {
+      const rowIndex = data.findIndex((item) => item.id === rowId);
+      acc[rowIndex] = true;
+      return acc;
+    }, {} as RowSelectionState);
+  }, [selectedRows, data]);
 
   const tableInstance = useReactTable({
     data,
@@ -113,6 +125,7 @@ export function DynamicTable<T extends { id?: string }>({
       globalFilter,
       columnFilters,
       pagination: { pageIndex, pageSize },
+      rowSelection: initialRowSelectionState, // Pass the initial row selection state
     },
     // Enable pagination
     manualPagination: false, // Set to true if server-side pagination
