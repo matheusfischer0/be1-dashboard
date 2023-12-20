@@ -11,12 +11,12 @@ import { useUser } from "@/hooks/useUser";
 import { useUsers } from "@/hooks/useUsers";
 import { cpfIsComplete, cpfIsValid } from "@/lib/cpf-validator";
 import { DEFAULT_ROLES } from "@/constants/defaultRoles";
-import { useQuery } from "react-query";
+import { useQuery, useQueryClient } from "react-query";
 import { http } from "@/lib/http-common";
 import Loading from "@/app/components/loading.component";
 import { Button } from "@/components/ui/button";
 import { DynamicTable } from "@/app/components/tables/dynamicTable.component";
-import { IUser } from "@/interfaces/IUser";
+import { IProductOnClient, IUser } from "@/interfaces/IUser";
 import { ColumnDef, RowSelectionState } from "@tanstack/react-table";
 import { Checkbox } from "@/components/ui/checkbox";
 import { CaretSortIcon } from "@radix-ui/react-icons";
@@ -132,19 +132,15 @@ const userSchema = z.object({
 
 type UpdateUserFormData = z.infer<typeof userSchema>;
 
-const mapClientsToRowSelectionState = (
-  clients: Array<{ id: string }>
-): RowSelectionState => {
-  const selectionState: RowSelectionState = {};
-
-  clients.forEach((client) => {
-    selectionState[client.id] = true;
-  });
-
-  return selectionState;
-};
+interface AddNewProductToClient {
+  productId: string;
+  clientId: string;
+  warrantyFinalDate: string;
+  orderNumber: string;
+}
 
 export default function EditPage({ params }: EditPageProps) {
+  const queryClient = useQueryClient();
   const { user, isLoading: isLoadingUpdate, error } = useUser(params.id);
   const { fetchUsers } = useUsers();
   const router = useRouter();
@@ -224,6 +220,16 @@ export default function EditPage({ params }: EditPageProps) {
           router.push("/admin/usuarios");
         });
     }
+  };
+
+  const handleAddProductToClient = async (data: AddNewProductToClient) => {
+    await http.post("/products/add-to-client", data);
+    queryClient.invalidateQueries("user");
+  };
+
+  const handleRemoveProductFromClient = async (data: IProductOnClient) => {
+    await http.post("/products/remove-from-client", data);
+    queryClient.invalidateQueries("user");
   };
 
   const mapSelectedRows = (data: string[]) => {
@@ -318,7 +324,12 @@ export default function EditPage({ params }: EditPageProps) {
                 <h3 className="text-lg text-black mb-2">
                   Adicione produtos ao cliente:
                 </h3>
-                <AddProductToClientForm productsOnClient={user.products} />
+                <AddProductToClientForm
+                  clientId={user.id}
+                  productsOnClient={user.products}
+                  onAddNewProductToClient={handleAddProductToClient}
+                  onRemoveProductFromClient={handleRemoveProductFromClient}
+                />
               </>
             )
           ) : (

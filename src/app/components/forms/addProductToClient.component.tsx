@@ -13,6 +13,8 @@ import InputMask from "react-input-mask";
 import Select, { Props as SelectProps } from "react-select";
 import { twMerge } from "tailwind-merge";
 import { formatDate } from "@/lib/date-functions";
+import { http } from "@/lib/http-common";
+import { FiTrash } from "react-icons/fi";
 
 function updateSelectedRows(
   rowId: string,
@@ -30,11 +32,19 @@ function updateSelectedRows(
   });
 }
 
-// import { Container } from './styles';
+interface AddNewProductToClient {
+  productId: string;
+  clientId: string;
+  warrantyFinalDate: string;
+  orderNumber: string;
+}
 
 interface AddProductToClientFormProps {
+  clientId: string;
   productsOnClient?: IProductOnClient[];
   showLabel?: boolean;
+  onAddNewProductToClient: (data: AddNewProductToClient) => Promise<void>;
+  onRemoveProductFromClient: (data: IProductOnClient) => Promise<void>;
 }
 
 // Define the zod schema
@@ -88,10 +98,27 @@ const linkProductsColumnsFields = ({
       <div className="capitalize">{row.getValue("warrantyFinalDate")}</div>
     ),
   },
+  {
+    accessorKey: "actions",
+    header: "Remover",
+    cell: ({ row }) => (
+      <Button
+        className="p-0"
+        variant="ghost"
+        onClick={() => onDeleteRow && onDeleteRow(row.original)}
+        type="button"
+      >
+        <FiTrash className="text-red-500" size={22} />
+      </Button>
+    ),
+  },
 ];
 
 export function AddProductToClientForm({
+  clientId,
   productsOnClient,
+  onAddNewProductToClient,
+  onRemoveProductFromClient,
 }: AddProductToClientFormProps) {
   const { products } = useProducts();
   const [selectedRows, setSelectedRows] = useState<string[]>([]);
@@ -108,17 +135,23 @@ export function AddProductToClientForm({
     ? { value: activeValueProduct.id, label: activeValueProduct.name }
     : null;
 
-  const handleAddProductToClient = () => {
+  const handleAddProductToClient = async () => {
     if (!warrantyFinalDate) return;
     if (!orderNumber) return;
     if (!selectedProduct) return;
 
     const formattedDate = formatDate(warrantyFinalDate);
-    console.log({
-      id: selectedProduct,
+
+    const data = {
+      productId: selectedProduct,
+      clientId,
       orderNumber,
       warrantyFinalDate: formattedDate,
-    });
+    };
+
+    console.log("Novo Produto", data);
+
+    onAddNewProductToClient(data);
   };
 
   return (
@@ -173,7 +206,7 @@ export function AddProductToClientForm({
             data={productsOnClient}
             columns={linkProductsColumnsFields({
               onEditRow: () => {},
-              onDeleteRow: () => {},
+              onDeleteRow: onRemoveProductFromClient,
               setSelectedRows,
             })}
           />
