@@ -1,58 +1,105 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
-import { FormProvider, useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
+import { useEffect, useState } from "react";
+
 import { z } from "zod";
-import { Input } from "@/app/components/inputs.component";
-import { useRouter } from "next/navigation";
+import { FormProvider, useForm } from "react-hook-form";
+import InputMask from "react-input-mask";
+import { DEFAULT_ROLES, IRole } from "@/constants/defaultRoles";
 import { useCities } from "@/hooks/useCities";
-import { useUser } from "@/hooks/useUser";
-import { useUsers } from "@/hooks/useUsers";
+import CustomSelect from "@/app/components/Input/CustomSelect";
 import { cpfIsComplete, cpfIsValid } from "@/lib/cpf-validator";
-import { DEFAULT_ROLES } from "@/constants/defaultRoles";
+import toast from "react-hot-toast";
+import useAxiosAuth from "@/hooks/useAxiosAuth";
+import { AxiosError } from "axios";
+import { useRouter } from "next/navigation";
+import { useUsers } from "@/hooks/useUsers";
 import { useQuery, useQueryClient } from "react-query";
-import { http } from "@/lib/http-common";
-import Loading from "@/app/components/loading.component";
-import { Button } from "@/components/ui/button";
 import { DynamicTable } from "@/app/components/tables/dynamicTable.component";
-import { IProductOnClient, IUser } from "@/interfaces/IUser";
-import { ColumnDef, RowSelectionState } from "@tanstack/react-table";
 import { Checkbox } from "@/components/ui/checkbox";
 import { CaretSortIcon } from "@radix-ui/react-icons";
-import { AddProductToClientForm } from "@/app/components/forms/addProductToClient.component";
+import { Button } from "@/components/ui/button";
+import { updateSelectedRows } from "@/lib/utils";
+import { IProductOnClient, IUser } from "@/interfaces/IUser";
+import { ColumnDef } from "@tanstack/react-table";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { FiInfo, FiTrash } from "react-icons/fi";
+import { useUser } from "@/hooks/useUser";
+import Spacer from "@/app/components/spacer.component";
+import { http } from "@/lib/http-common";
+import { useToast } from "@/app/components/toast.component";
 
-interface EditPageProps {
-  params: { id: string };
+import { Input } from "@/components/ui/input";
+
+import Select from "react-select";
+import { useProducts } from "@/hooks/useProducts";
+import { formatDate } from "@/lib/date-functions";
+
+interface Location {
+  latitude: number;
+  longitude: number;
 }
 
-function updateSelectedRows(
-  rowId: string,
-  isSelected: boolean,
-  setSelectedRows: React.Dispatch<React.SetStateAction<string[]>>
-) {
-  setSelectedRows((prev) => {
-    const newSelectedRows = new Set(prev);
-    if (isSelected) {
-      newSelectedRows.add(rowId);
-    } else {
-      newSelectedRows.delete(rowId);
-    }
-    return Array.from(newSelectedRows);
-  });
+interface ICreateUserDTO {
+  id?: string;
+  name: string;
+  phone?: string;
+  state?: string;
+  city?: string;
+  email: string;
+  cpf: string;
+  password: string;
+  avatar?: string;
+  role?: IRole;
+  location?: Omit<Location, "id" | "address">;
+  clients?: { id: string }[];
 }
 
-interface IColumnsFieldsProps {
+// Define the zod schema
+const editUserSchema = z.object({
+  name: z
+    .string()
+    .nonempty("Campo obrigatório")
+    .refine((value) => {
+      return value.split(" ").length > 1;
+    }, "Cadastre um nome e sobrenome"),
+  email: z.string().email("E-mail inválido"),
+  phone: z.string(),
+  state: z.string().nonempty("Campo obrigatório"),
+  city: z.string().nonempty("Campo obrigatório"),
+  cpf: z
+    .string()
+    .refine(cpfIsComplete, {
+      message: "CPF está incompleto",
+    })
+    .refine(cpfIsValid, {
+      message: "CPF Inválido",
+    }),
+  role: z.enum(["ADMIN", "CLIENT", "TECHNICIAN", "USER"]),
+  clients: z.array(z.object({ id: z.string().nonempty("Id é obrigatório") })),
+  products: z.array(
+    z.object({
+      product: z.object({ name: z.string() }),
+      warrantyFinalDate: z.string(),
+      orderNumber: z.string(),
+    })
+  ),
+  password: z.string().optional(),
+});
+
+type EditUserFormData = z.infer<typeof editUserSchema>;
+
+interface IClientsColumnsFieldsProps {
   onEditRow?: (user: IUser) => void;
   onDeleteRow?: (user: IUser) => void;
-  setSelectedRows: React.Dispatch<React.SetStateAction<string[]>>;
+  setSelectedRows?: React.Dispatch<React.SetStateAction<string[]>>;
 }
 
 const linkClientsColumnsFields = ({
   onEditRow,
   onDeleteRow,
   setSelectedRows,
-}: IColumnsFieldsProps): ColumnDef<IUser>[] => [
+}: IClientsColumnsFieldsProps): ColumnDef<IUser>[] => [
   {
     id: "select",
     header: ({ table }) => (
@@ -67,7 +114,8 @@ const linkClientsColumnsFields = ({
         checked={row.getIsSelected()}
         onCheckedChange={(value) => {
           row.toggleSelected(!!value);
-          updateSelectedRows(row.original.id, !!value, setSelectedRows);
+          setSelectedRows &&
+            updateSelectedRows(row.original.id, !!value, setSelectedRows);
         }}
         aria-label="Select row"
       />
@@ -111,26 +159,63 @@ const linkClientsColumnsFields = ({
   },
 ];
 
-// Define the zod schema
-const userSchema = z.object({
-  name: z.string().nonempty(),
-  email: z.string().email("E-mail inválido"),
-  phone: z.string(),
-  state: z.string(),
-  city: z.string(),
-  clients: z.array(z.object({ id: z.string() })),
-  cpf: z
-    .string()
-    .refine(cpfIsComplete, {
-      message: "CPF está incompleto",
-    })
-    .refine(cpfIsValid, {
-      message: "CPF Inválido",
-    }),
-  role: z.enum(["ADMIN", "CLIENT", "TECHNICIAN", "USER"]),
-});
+interface IProductsColumnsFieldsProps {
+  onEditRow?: (product: IProductOnClient) => void;
+  onDeleteRow?: (product: IProductOnClient) => void;
+  setSelectedRows?: React.Dispatch<React.SetStateAction<string[]>>;
+}
 
-type UpdateUserFormData = z.infer<typeof userSchema>;
+const linkProductsColumnsFields = ({
+  onEditRow,
+  onDeleteRow,
+  setSelectedRows,
+}: IProductsColumnsFieldsProps): ColumnDef<IProductOnClient>[] => [
+  {
+    accessorKey: "product",
+    header: "Produtos",
+    cell: ({ row }) => {
+      const product = row.getValue("product") as { name: string };
+      return <div className="capitalize">{product?.name}</div>;
+    },
+  },
+  {
+    accessorKey: "orderNumber",
+    header: ({ column }) => {
+      return (
+        <Button
+          variant="ghost"
+          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+        >
+          Número do pedido
+          <CaretSortIcon className="ml-2 h-4 w-4" />
+        </Button>
+      );
+    },
+    cell: ({ row }) => <div className="">{row.getValue("orderNumber")}</div>,
+  },
+  {
+    accessorKey: "warrantyFinalDate",
+    enableHiding: true,
+    header: "Garantia até",
+    cell: ({ row }) => (
+      <div className="capitalize">{row.getValue("warrantyFinalDate")}</div>
+    ),
+  },
+  {
+    accessorKey: "actions",
+    header: "Remover",
+    cell: ({ row }) => (
+      <Button
+        className="p-0"
+        variant="ghost"
+        onClick={() => onDeleteRow && onDeleteRow(row.original)}
+        type="button"
+      >
+        <FiTrash className="text-red-500" size={22} />
+      </Button>
+    ),
+  },
+];
 
 interface AddNewProductToClient {
   productId: string;
@@ -139,50 +224,58 @@ interface AddNewProductToClient {
   orderNumber: string;
 }
 
-export default function EditPage({ params }: EditPageProps) {
-  const queryClient = useQueryClient();
-  const { user, isLoading: isLoadingUpdate, error } = useUser(params.id);
-  const { fetchUsers } = useUsers();
+interface EditUserPageProps {
+  params: { id: string };
+}
+
+const EditUserPage = ({ params }: EditUserPageProps) => {
   const router = useRouter();
+  const queryClient = useQueryClient();
+
+  const { Toast, openToast } = useToast();
+
+  const { products } = useProducts();
+  const { user } = useUser(params.id);
+  const { fetchUsers } = useUsers();
+
+  const { data: users } = useQuery(["users", { role: "CLIENT" }], fetchUsers, {
+    keepPreviousData: true,
+  });
 
   const [isLoading, setIsLoading] = useState(false);
   const [selectedRows, setSelectedRows] = useState<string[]>([]);
 
-  const {
-    isLoading: isLoadingUsers,
-    error: errorUsers,
-    data: users,
-  } = useQuery(["users", { role: "CLIENT" }], fetchUsers, {
-    keepPreviousData: true, // Keep old data for smoother pagination transitions
+  // Handle Add new Product to Client
+  const [orderNumber, setOrderNumber] = useState<string>();
+  const [warrantyFinalDate, setWarrantyFinalDate] = useState<string>();
+  const [selectedProduct, setSelectedProduct] = useState<string>();
+  const activeValueProduct = products?.find(
+    (product) => product.id === selectedProduct
+  );
+  const activeProduct = activeValueProduct
+    ? { value: activeValueProduct.id, label: activeValueProduct.name }
+    : null;
+
+  const methods = useForm<EditUserFormData>({
+    resolver: zodResolver(editUserSchema),
+    reValidateMode: "onChange",
   });
 
-  const methods = useForm<UpdateUserFormData>({
-    resolver: zodResolver(userSchema),
-  });
-
   const {
+    control,
     register,
     handleSubmit,
-    formState: { errors },
-    setValue,
     watch,
-    getValues,
+    setValue,
+    formState: { errors },
   } = methods;
 
-  const selectedState = watch("state");
-  const { cities, states, filterCities } = useCities(selectedState);
-
   useEffect(() => {
-    if (selectedState) {
-      filterCities();
-    }
-  }, [selectedState, filterCities]);
-
-  useEffect(() => {
+    console.log("USER", user);
     if (user) {
-      console.log("setup", user);
       setValue("name", user.name);
       setValue("email", user.email);
+      setValue("role", user.role);
       if (user.cpf) setValue("cpf", user.cpf);
       if (user.state) setValue("state", user.state);
       if (user.city) setValue("city", user.city);
@@ -190,166 +283,304 @@ export default function EditPage({ params }: EditPageProps) {
       if (user.state) setValue("state", user.state);
       if (user.city) setValue("city", user.city);
       if (user.clients) {
-        setValue("clients", user.clients);
         // Set initial selected rows based on user's clients
-        const clientIds = user.clients.map((client) => client.id);
+        setValue("clients", user.clients);
+        const clientIds = user.clients?.map((client) => client.id);
         setSelectedRows(clientIds);
       }
-      setValue("role", user.role);
+      if (user.products) {
+        // Set initial selected rows based on user's clients
+        setValue("products", user.products);
+      }
     }
-  }, [user, states, cities, params, setValue]);
+  }, [user, params, setValue]);
 
-  if (error) return <div>An error has occurred: {error.message}</div>;
+  const selectedRole = watch("role");
 
-  const onSubmit = async (data: UpdateUserFormData) => {
-    setIsLoading(true);
-    if (data.name && user?.id) {
-      const updatedUser = {
-        ...user,
-        ...data,
-        clients: mapSelectedRows(selectedRows),
-      };
+  const selectedState = watch("state");
+  const { cities, states } = useCities(selectedState);
 
-      http
-        .post(`/users/update/${user.id}`, updatedUser)
-        .then((response) => {
-          console.log(response.data);
-        })
-        .finally(() => {
-          setIsLoading(false);
-          router.push("/admin/usuarios");
-        });
-    }
-  };
+  const handleAddProductToClient = async () => {
+    if (!warrantyFinalDate) return;
+    if (!orderNumber) return;
+    if (!selectedProduct) return;
 
-  const handleAddProductToClient = async (data: AddNewProductToClient) => {
+    const formattedDate = formatDate(warrantyFinalDate);
+
+    const data = {
+      productId: selectedProduct,
+      clientId: params.id,
+      orderNumber,
+      warrantyFinalDate: formattedDate,
+    };
+
     await http.post("/products/add-to-client", data);
     queryClient.invalidateQueries("user");
   };
 
   const handleRemoveProductFromClient = async (data: IProductOnClient) => {
+    openToast(
+      `Você tem certeza que deseja excluir o produto ${data?.product.name} (Número de pedido: ${data?.orderNumber})?`,
+      () => handleConfirmRemoveProductFromClient(data),
+      () => {}
+    );
+  };
+
+  const handleConfirmRemoveProductFromClient = async (
+    data: IProductOnClient
+  ) => {
     await http.post("/products/remove-from-client", data);
     queryClient.invalidateQueries("user");
   };
 
-  const mapSelectedRows = (data: string[]) => {
-    return data.map((item) => ({ id: item }));
+  const onSubmit = async (data: EditUserFormData) => {
+    console.log("onSubmit", {
+      ...data,
+      clients: selectedRows.map((id) => ({ id })),
+    });
+    setIsLoading(true);
+    try {
+      await http.post(`/users/update/${params.id}`, {
+        ...data,
+        clients: selectedRows.map((id) => ({ id })),
+      });
+      // Handle success (e.g., show a success message or redirect)
+      toast.success("Sucesso ao editar o usuário");
+      setIsLoading(false);
+
+      router.push("/admin/usuarios");
+    } catch (error) {
+      // Handle error (e.g., show an error message)
+      const err = error as AxiosError<{ message: string }>;
+      toast.error(`Erro ao Salvar o usuário!  ${err.response?.data.message}`);
+      setIsLoading(false);
+
+      console.log(error);
+    }
   };
 
   return (
-    <div className="flex-1 items-center justify-center text-zinc-900">
-      <div className="pb-2 text-xl font-bold">Editar Usuário</div>
-
+    <>
+      <Toast />
       <FormProvider {...methods}>
-        <form className="flex flex-col" onSubmit={handleSubmit(onSubmit)}>
-          <div className="flex flex-row flex-wrap">
-            <Input.Root className="basis-4/12 p-3">
-              <Input.Label>Nome:</Input.Label>
-              <Input.Controller register={register("name")} type="text" />
-              <Input.Error>
-                {errors.name && <p>{errors.name.message?.toString()}</p>}
-              </Input.Error>
-            </Input.Root>
-            <Input.Root className="basis-4/12 p-3">
-              <Input.Label>E-mail:</Input.Label>
-              <Input.Controller register={register("email")} type="email" />
-              <Input.Error>
-                {errors.email && <p>{errors.email.message?.toString()}</p>}
-              </Input.Error>
-            </Input.Root>
-
-            <Input.Root className="basis-4/12 p-3">
-              <Input.Label>Telefone:</Input.Label>
-              <Input.MaskedController
-                register={register("phone")}
-                mask="(99) 99999-9999"
-              />
-              <Input.Error>
-                {errors.phone && <p>{errors.phone.message?.toString()}</p>}
-              </Input.Error>
-            </Input.Root>
-            <Input.Root className="basis-4/12 p-3">
-              <Input.Label>CPF:</Input.Label>
-              <Input.MaskedController
-                register={register("cpf")}
-                mask="999.999.999-99"
-              />
-              <Input.Error>
-                {errors.cpf && <p>{errors.cpf.message?.toString()}</p>}
-              </Input.Error>
-            </Input.Root>
-            <Input.Root className="basis-4/12 p-3">
-              <Input.Label>Estado:</Input.Label>
-              <Input.SelectController name="state" options={states} />
-              <Input.Error>
-                {errors.state && <p>{errors.state.message?.toString()}</p>}
-              </Input.Error>
-            </Input.Root>
-            <Input.Root className="basis-4/12 p-3">
-              <Input.Label>Cidade:</Input.Label>
-              <Input.SelectController name="city" options={cities} />
-              <Input.Error>
-                {errors.city && <p>{errors.city.message?.toString()}</p>}
-              </Input.Error>
-            </Input.Root>
-            <Input.Root className="basis-4/12 p-3">
-              <Input.Label>Tipo de usuário:</Input.Label>
-              <Input.SelectController name="role" options={DEFAULT_ROLES} />
-              <Input.Error>
-                {errors.role && <p>{errors.role.message?.toString()}</p>}
-              </Input.Error>
-            </Input.Root>
+        <form
+          onSubmit={handleSubmit(onSubmit)}
+          className="flex flex-col gap-2 pt-2"
+        >
+          <div className="flex w-full justify-between">
+            <h2 className="text-black text-xl">Editar usuário</h2>
           </div>
-          {user?.role === "TECHNICIAN" && users && (
-            <Input.Root className="flex-1 w-full p-3">
-              <Input.Label>
-                Selecione os clientes atendidos por este técnico:
-              </Input.Label>
-              {!isLoadingUsers && (
-                <DynamicTable<IUser>
-                  data={users}
-                  columns={linkClientsColumnsFields({
-                    setSelectedRows,
-                  })}
-                  selectedRows={selectedRows}
-                  searchByPlaceholder={"Procurar..."}
-                />
+          <Spacer />
+          {/* Input fields for each attribute, including masked inputs for phone and CPF */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-2 ">
+            {/* Name Field */}
+            <div className="flex flex-col gap-1">
+              <label className="text-zinc-700 px-1">Nome</label>
+              <input
+                {...register("name", { required: true })}
+                className="w-full p-2 border rounded text-black"
+              />
+              {errors.name && (
+                <span className="text-red-500">{errors.name.message}</span>
               )}
-            </Input.Root>
+            </div>
+
+            {/* Phone Field */}
+            <div className="flex flex-col gap-1">
+              <label className="text-zinc-700 px-1">Telefone</label>
+              <InputMask
+                className="w-full p-2 border rounded text-black"
+                mask="(99) 99999-9999"
+                placeholder="(XX) 99999-9999"
+                {...register("phone")}
+              />
+            </div>
+
+            {/* State Field */}
+            <div className="flex flex-col gap-1">
+              <label className="text-zinc-700 px-1">Estado</label>
+              <CustomSelect
+                name="state"
+                options={states}
+                className="w-full border rounded"
+              />
+              {errors.state && (
+                <span className="text-red-500">Campo obrigatório</span>
+              )}
+            </div>
+
+            {/* City Field */}
+            <div className="flex flex-col gap-1">
+              <label className="text-zinc-700 px-1">Cidade</label>
+              <CustomSelect
+                name="city"
+                options={cities}
+                className="text-black"
+              />
+              {errors.city && (
+                <span className="text-red-500">Campo obrigatório</span>
+              )}
+            </div>
+
+            {/* Email Field */}
+            <div className="flex flex-col gap-1">
+              <label className="text-zinc-700 px-1">E-mail</label>
+              <input
+                {...register("email", {
+                  required: { value: true, message: "O e-mail é obrigatório" },
+                })}
+                placeholder="E-mail"
+                className="w-full p-2 px-3 border rounded text-black"
+              />
+              {errors.email && (
+                <span className="text-red-500">{errors.email.message}</span>
+              )}
+            </div>
+
+            {/* CPF Field */}
+            <div className="flex flex-col gap-1">
+              <label className="text-zinc-700 px-1">CPF</label>
+              <InputMask
+                className="w-full p-2 border rounded text-black"
+                mask="999.999.999-99"
+                placeholder="999.999.999-99"
+                {...register("cpf", {
+                  required: { value: true, message: "Campo Obrigatório" },
+                  validate: {
+                    cpfIsValue: (v) => cpfIsValid(v) || "CPF Inválido",
+                  },
+                })}
+              ></InputMask>
+              {errors.cpf && (
+                <span className="text-red-500">{errors.cpf.message}</span>
+              )}
+            </div>
+            {/* ROLE Field */}
+            {/* DEFAULT_ROLES */}
+            <div className="flex flex-col gap-1">
+              <label className="text-zinc-700 px-1">Tipo de usuário</label>
+              <CustomSelect
+                name="role"
+                options={DEFAULT_ROLES}
+                className="text-black"
+              />
+              {errors.role && (
+                <span className="text-red-500">Campo obrigatório</span>
+              )}
+            </div>
+            {/* Password Field */}
+            <div className="flex flex-col gap-1">
+              <label className="text-zinc-700 px-1">Senha</label>
+              <input
+                type="password"
+                {...register("password")}
+                placeholder="Digite uma nova senha para o cliente"
+                className="w-full p-2 border rounded text-black"
+              />
+              {errors.password && (
+                <span className="text-red-500">Este campo é obrigatório</span>
+              )}
+            </div>
+          </div>
+          <Spacer />
+
+          {selectedRole === "TECHNICIAN" && (
+            <div className="flex flex-col gap-2">
+              <label className="text-zinc-800 text-xl px-1">Clientes</label>
+              <label className="flex items-center gap-1 text-zinc-700 px-1">
+                <FiInfo></FiInfo>Selecione todos os clientes que o assistente
+                atende
+              </label>
+              <DynamicTable<IUser>
+                data={users || []}
+                selectedRows={selectedRows}
+                columns={linkClientsColumnsFields({ setSelectedRows })}
+                searchByPlaceholder="Procure o cliente"
+              />
+            </div>
           )}
-          {!isLoadingUsers ? (
-            user?.role === "CLIENT" &&
-            users && (
-              <>
-                <h3 className="text-lg text-black mb-2">
-                  Adicione produtos ao cliente:
-                </h3>
-                <AddProductToClientForm
-                  clientId={user.id}
-                  productsOnClient={user.products}
-                  onAddNewProductToClient={handleAddProductToClient}
-                  onRemoveProductFromClient={handleRemoveProductFromClient}
-                />
-              </>
-            )
-          ) : (
-            <Loading></Loading>
+
+          {selectedRole === "CLIENT" && (
+            <div className="flex flex-col gap-2">
+              <label className="text-zinc-800 text-xl px-1">Produtos</label>
+              <label className="flex items-center gap-1 text-zinc-700 px-1">
+                <FiInfo></FiInfo>Adicione os produtos que o cliente possui
+              </label>
+              <div>
+                <div className="flex flex-row flex-wrap pb-3 gap-3 ">
+                  <Select
+                    styles={{
+                      control: () => ({
+                        display: "flex",
+                        border: "none",
+                        padding: 0,
+                      }),
+                    }}
+                    placeholder="Selecione o produto"
+                    options={products?.map((product) => ({
+                      value: product.id,
+                      label: product.name,
+                    }))}
+                    value={activeProduct}
+                    onChange={(val) => {
+                      if (val) setSelectedProduct(val.value);
+                    }}
+                    className={
+                      "max-w-[20rem] w-full border border-gray-200 rounded-md px-1 focus:border-white text-black"
+                    }
+                  />
+                  <div className="flex flex-1 min-w-[6rem]">
+                    <Input
+                      className="text-black"
+                      placeholder="Digite o número do pedido"
+                      value={orderNumber}
+                      onChange={(e) => setOrderNumber(e.target.value)}
+                      type="text"
+                    />
+                  </div>
+                  <div className="">
+                    <Input
+                      className="text-black"
+                      value={warrantyFinalDate}
+                      onChange={(e) => setWarrantyFinalDate(e.target.value)}
+                      type="date"
+                    />
+                  </div>
+                  <Button
+                    variant={"primary"}
+                    onClick={() => handleAddProductToClient()}
+                    className="w-fit"
+                    type="button"
+                  >
+                    Adicionar
+                  </Button>
+                </div>
+              </div>
+              <DynamicTable<IProductOnClient>
+                data={user?.products || []}
+                columns={linkProductsColumnsFields({
+                  onDeleteRow: handleRemoveProductFromClient,
+                })}
+              />
+            </div>
           )}
-          <div className="py-3 hover:cursor-pointer">
-            {isLoading ? (
-              <Loading></Loading>
-            ) : (
-              <Button
-                className="bg-blue-500 w-32 text-white "
-                variant={"default"}
-                type="submit"
-              >
-                Salvar
-              </Button>
-            )}
+
+          <div className="flex w-full justify-end">
+            <Button
+              variant={"primary"}
+              disabled={isLoading}
+              type="submit"
+              className="bg-blue-500 w-fit text-white py-2 px-8 shadow-md"
+            >
+              Salvar usuário
+            </Button>
           </div>
         </form>
       </FormProvider>
-    </div>
+    </>
   );
-}
+
+  // Implementation will go here
+};
+
+export default EditUserPage;

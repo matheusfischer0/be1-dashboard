@@ -6,7 +6,6 @@ import Header from "@/app/components/header.component";
 import Loading from "@/app/components/loading.component";
 import Sidebar from "@/app/components/sidebar.component";
 import { useSession } from "next-auth/react";
-import { redirect } from "next/navigation";
 
 export default function Layout({ children }: { children: ReactNode }) {
   const session = useSession();

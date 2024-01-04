@@ -1,52 +1,58 @@
-'use client'
+"use client";
 
-import React, { useCallback, useEffect } from 'react'
-import { z, ZodType } from 'zod'
-import { FormProvider, useForm } from 'react-hook-form'
-import { zodResolver } from '@hookform/resolvers/zod'
-import { Input } from '@/app/components/inputs.component'
-import { Button } from '@/app/components/buttons.component'
-import { useFile } from '@/hooks/useFile'
-import { useRouter } from 'next/navigation'
-import { useProduct } from '@/hooks/useProduct'
+import React, { useCallback, useEffect } from "react";
+import { z, ZodType } from "zod";
+import { FormProvider, useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { Input } from "@/app/components/inputs.component";
+import { Button } from "@/app/components/buttons.component";
+import { useFile } from "@/hooks/useFile";
+import { useRouter } from "next/navigation";
+import { useProduct } from "@/hooks/useProduct";
 
 interface EditPageProps {
-  params: { id: string }
+  params: { id: string };
 }
 
 // Define the zod schema
 const productSchema = z.object({
-  name: z.string().nonempty('O nome não pode ser vazio!'),
-  smallDescription: z.string().nonempty('A descrição curta é obrigatória')
+  name: z.string().nonempty("O nome não pode ser vazio!"),
+  smallDescription: z
+    .string()
+    .nonempty("A descrição curta é obrigatória")
     .max(100, "Máximo de 100 caracteres"),
-  description: z.string().nonempty('Uma descrição deve ser adicionada!'),
+  description: z.string().nonempty("Uma descrição deve ser adicionada!"),
   images: z.any().optional() as ZodType<FileList | null>,
   files: z.any().optional() as ZodType<FileList | null>,
-})
+});
 
-type EditProductFormData = z.infer<typeof productSchema>
+type EditProductFormData = z.infer<typeof productSchema>;
 
 export default function EditPage({ params }: EditPageProps) {
   const { product, updateProduct, refetchProduct, isLoading, error } =
-    useProduct(params.id)
-
+    useProduct(params.id);
 
   const { files, uploadFiles, deleteFile, setInitialFiles } = useFile({
     productId: product?.id,
-    fileType: 'DOCUMENT',
-  })
+    fileType: "DOCUMENT",
+  });
 
-  const { files: images, uploadFiles: uploadImages, deleteFile: deleteImage, setInitialFiles: setInitialImages } = useFile({
+  const {
+    files: images,
+    uploadFiles: uploadImages,
+    deleteFile: deleteImage,
+    setInitialFiles: setInitialImages,
+  } = useFile({
     productId: product?.id,
-    fileType: 'IMAGE',
-  })
+    fileType: "IMAGE",
+  });
 
-  const router = useRouter()
+  const router = useRouter();
 
   const methods = useForm<EditProductFormData>({
     resolver: zodResolver(productSchema),
-    reValidateMode: 'onSubmit',
-  })
+    reValidateMode: "onSubmit",
+  });
 
   const {
     register,
@@ -54,52 +60,55 @@ export default function EditPage({ params }: EditPageProps) {
     setValue,
     formState: { errors },
     watch,
-  } = methods
+  } = methods;
 
   // WATCH IMAGES TO BE UPLOADED
-  const selectedImages = watch('images')
-  const handleUploadImages = useCallback(async (imagesToUpload: FileList) => {
-    await uploadImages(imagesToUpload);
-    setValue('images', null)
-  }, [uploadImages]);
+  const selectedImages = watch("images");
+  const handleUploadImages = useCallback(
+    async (imagesToUpload: FileList) => {
+      await uploadImages(imagesToUpload);
+      setValue("images", null);
+    },
+    [uploadImages]
+  );
 
   useEffect(() => {
     if (selectedImages) {
-      handleUploadImages(selectedImages)
+      handleUploadImages(selectedImages);
     }
-  }, [selectedImages])
+  }, [selectedImages]);
 
   // WATCH FILES TO BE UPLOADED
-  const selectedFiles = watch('files')
-  const handleUploadFiles = useCallback(async (filesToUpload: FileList) => {
-    await uploadFiles(filesToUpload);
-    setValue('files', null)
-  }, [uploadFiles]);
+  const selectedFiles = watch("files");
+  const handleUploadFiles = useCallback(
+    async (filesToUpload: FileList) => {
+      await uploadFiles(filesToUpload);
+      setValue("files", null);
+    },
+    [uploadFiles]
+  );
 
   useEffect(() => {
     if (selectedFiles) {
-      handleUploadFiles(selectedFiles)
+      handleUploadFiles(selectedFiles);
     }
-  }, [selectedFiles])
+  }, [selectedFiles]);
 
   useEffect(() => {
     if (product) {
-      setValue('name', product.name)
-      setValue('smallDescription', product.smallDescription)
-      setValue(
-        'description',
-        product.description ? product.description : '',
-      )
-      setValue('images', null)
-      setValue('files', null)
+      setValue("name", product.name);
+      setValue("smallDescription", product.smallDescription);
+      setValue("description", product.description ? product.description : "");
+      setValue("images", null);
+      setValue("files", null);
 
-      if (product.images) setInitialImages(product.images)
+      if (product.images) setInitialImages(product.images);
 
-      if (product.files) setInitialFiles(product.files)
+      if (product.files) setInitialFiles(product.files);
     }
-  }, [product])
+  }, [product]);
 
-  if (error) return <div>An error has occurred: {error.message}</div>
+  if (error) return <div>An error has occurred: {error.message}</div>;
 
   const onSubmit = (data: EditProductFormData) => {
     if (data.name) {
@@ -109,17 +118,17 @@ export default function EditPage({ params }: EditPageProps) {
         smallDescription: data.smallDescription,
         description: data.description,
         images,
-      })
+      });
     }
-    router.push('/admin/configuracoes/produtos')
-  }
+    router.push("/admin/configuracoes/produtos");
+  };
 
   const handleDeleteImage = (id: string) => {
-    deleteImage(id)
-  }
+    deleteImage(id);
+  };
   const handleDeleteFile = (id: string) => {
-    deleteFile(id)
-  }
+    deleteFile(id);
+  };
 
   return (
     <div className="flex-1 items-center justify-center text-zinc-900">
@@ -133,10 +142,7 @@ export default function EditPage({ params }: EditPageProps) {
             <div className="flex flex-wrap gap-3">
               <Input.Root className="w-full md:flex-1">
                 <Input.Label>Nome</Input.Label>
-                <Input.Controller
-                  register={register('name')}
-                  type="text"
-                />
+                <Input.Controller register={register("name")} type="text" />
                 <Input.Error>
                   {errors.name && <p>{errors.name.message?.toString()}</p>}
                 </Input.Error>
@@ -144,7 +150,7 @@ export default function EditPage({ params }: EditPageProps) {
               <Input.Root className="w-full md:flex-1">
                 <Input.Label>Descrição Curta</Input.Label>
                 <Input.Controller
-                  register={register('smallDescription')}
+                  register={register("smallDescription")}
                   type="text"
                 />
                 <Input.Error>
@@ -155,9 +161,7 @@ export default function EditPage({ params }: EditPageProps) {
               </Input.Root>
               <Input.Root className="w-full">
                 <Input.Label>Descrição</Input.Label>
-                <Input.TextAreaController
-                  register={register('description')}
-                />
+                <Input.TextAreaController register={register("description")} />
                 <Input.Error>
                   {errors.name && <p>{errors.name.message?.toString()}</p>}
                 </Input.Error>
@@ -170,20 +174,27 @@ export default function EditPage({ params }: EditPageProps) {
                   {errors.images && <p>{errors.images.message?.toString()}</p>}
                 </Input.Error>
                 {images && (
-                  <Input.ImagesPreview files={images} onDelete={(id) => handleDeleteImage(id)} />
+                  <Input.ImagesPreview
+                    files={images}
+                    onDelete={(id) => handleDeleteImage(id)}
+                  />
                 )}
               </Input.Root>
               <Input.Root className="w-full lg:flex-1">
-                <Input.Label>Arquivos (Visível para produtores e técnicos)</Input.Label>
+                <Input.Label>
+                  Arquivos (Visível para produtores e técnicos)
+                </Input.Label>
                 <Input.FileController name="files" accept=".pdf" multiple />
                 <Input.Error>
                   {errors.files && <p>{errors.files.message?.toString()}</p>}
                 </Input.Error>
                 {files && (
-                  <Input.FilesPreview files={files} onDelete={(id) => handleDeleteFile(id)} />
+                  <Input.FilesPreview
+                    files={files}
+                    onDelete={(id) => handleDeleteFile(id)}
+                  />
                 )}
               </Input.Root>
-
             </div>
           </div>
 
@@ -197,6 +208,6 @@ export default function EditPage({ params }: EditPageProps) {
           </div>
         </form>
       </FormProvider>
-    </div >
-  )
+    </div>
+  );
 }

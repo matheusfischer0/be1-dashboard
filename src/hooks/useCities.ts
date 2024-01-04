@@ -1,5 +1,6 @@
 import { useQuery } from "react-query";
 import { http } from "@/lib/http-common";
+import { useEffect } from "react";
 
 interface ICityProps {
   id: number;
@@ -60,14 +61,18 @@ export const useCities = (siglaUF?: string | null) => {
     { enabled: false }
   );
 
+  useEffect(() => {
+    refetchCities();
+  }, [siglaUF]);
+
   const { data: states, isLoading: isStatesLoading } = useQuery<
     ISelectOptionsProps[],
     Error
   >("states", () => fetchStates());
 
   return {
-    cities,
-    states,
+    cities: cities ? cities : [],
+    states: states ? states : [],
     isCitiesLoading,
     isStatesLoading,
     filterCities: refetchCities,

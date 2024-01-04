@@ -31,7 +31,7 @@ export const useUsers = () => {
       email,
       role,
     });
-    return data;
+    return data as IUser[];
   }
 
   const createUser = async (newUser: Partial<IUser>): Promise<IUser> => {

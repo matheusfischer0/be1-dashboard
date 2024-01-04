@@ -26,7 +26,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { DynamicTable } from "@/app/components/tables/dynamicTable.component";
-import { convertRoleToPortuguese } from "@/lib/utils/convertRoleToPortuguese";
+import { convertRoleToPortuguese } from "@/utils/convertRoleToPortuguese";
 
 function updateSelectedRows(
   rowId: string,
@@ -198,11 +198,7 @@ export default function Usuarios() {
 
   return (
     <div className="flex-1 items-center justify-center text-black pt-4">
-      <Toast
-        message={`Você tem certeza que deseja excluir ${selectedUser?.name}?`}
-        onCancel={() => {}}
-        onConfirm={() => handleDeleteUser()}
-      />
+      <Toast />
       <div className="flex justify-between items-center pb-2">
         <div className="text-xl font-medium">Usuários</div>
         <div>

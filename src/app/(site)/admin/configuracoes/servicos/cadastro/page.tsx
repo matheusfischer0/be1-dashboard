@@ -261,11 +261,7 @@ export default function RegisterPage({ params }: RegisterPageProps) {
 
   return (
     <div className="flex-1 items-center justify-center text-zinc-900 px-3 py-8">
-      <Toast
-        message={`Você tem certeza que deseja excluir ${selectedServiceOption?.description}?`}
-        onCancel={handleCancelDelete}
-        onConfirm={() => handleDelete()}
-      />
+      <Toast />
       <div className="text-xl font-medium pb-4">Cadastrar Serviço</div>
       <FormProvider {...methods}>
         <form className="flex flex-col" onSubmit={handleSubmit(onSubmit)}>

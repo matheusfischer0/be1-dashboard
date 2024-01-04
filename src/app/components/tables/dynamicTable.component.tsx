@@ -142,11 +142,11 @@ export function DynamicTable<T extends { id?: string }>({
             value={globalFilter}
             onChange={(e) => setGlobalFilter(e.target.value)}
             placeholder={searchByPlaceholder}
-            className="p-2 border rounded mb-4"
+            className="p-2 border rounded-md mb-1"
           />
         </div>
       )}
-      <div className="rounded-md border overflow-hidden box-border border-zinc-200">
+      <div className="rounded-md border overflow-hidden box-border border-zinc-200 text-black">
         <Table>
           <TableHeader className="bg-gradient-to-r from-zinc-50 to-zinc-100 ">
             {tableInstance.getHeaderGroups().map((headerGroup) => (

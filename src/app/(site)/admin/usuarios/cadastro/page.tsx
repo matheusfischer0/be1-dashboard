@@ -1,44 +1,85 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
-import { useUsers } from "@/hooks/useUsers";
-import { FormProvider, useForm, useWatch } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
-import { Input } from "@/app/components/inputs.component";
-import { useRouter } from "next/navigation";
-import { useCities } from "@/hooks/useCities";
-import { cpfIsComplete, cpfIsValid } from "@/lib/cpf-validator";
-import { DEFAULT_ROLES } from "@/constants/defaultRoles";
-import { Button } from "@/components/ui/button";
-import Loading from "@/app/components/loading.component";
-import { useQuery } from "react-query";
-import { DynamicTable } from "@/app/components/tables/dynamicTable.component";
-import { IUser } from "@/interfaces/IUser";
+import { useState } from "react";
 
-import { ColumnDef } from "@tanstack/react-table";
+import { z } from "zod";
+import { FormProvider, useFieldArray, useForm } from "react-hook-form";
+import InputMask from "react-input-mask";
+import { DEFAULT_ROLES, IRole } from "@/constants/defaultRoles";
+import { useCities } from "@/hooks/useCities";
+import CustomSelect from "@/app/components/Input/CustomSelect";
+import { cpfIsComplete, cpfIsValid } from "@/lib/cpf-validator";
+import toast from "react-hot-toast";
+import useAxiosAuth from "@/hooks/useAxiosAuth";
+import { AxiosError } from "axios";
+import { useRouter } from "next/navigation";
+import { useUsers } from "@/hooks/useUsers";
+import { useQuery, useQueryClient } from "react-query";
+import { DynamicTable } from "@/app/components/tables/dynamicTable.component";
 import { Checkbox } from "@/components/ui/checkbox";
 import { CaretSortIcon } from "@radix-ui/react-icons";
+import { Button } from "@/components/ui/button";
+import { updateSelectedRows } from "@/lib/utils";
+import { IProductOnClient, IUser } from "@/interfaces/IUser";
+import { ColumnDef } from "@tanstack/react-table";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { FiInfo, FiTrash } from "react-icons/fi";
+import { http } from "@/lib/http-common";
 
-interface RegisterPageProps {
-  params: {};
+interface Location {
+  latitude: number;
+  longitude: number;
 }
 
-function updateSelectedRows(
-  rowId: string,
-  isSelected: boolean,
-  setSelectedRows: React.Dispatch<React.SetStateAction<string[]>>
-) {
-  setSelectedRows((prev) => {
-    const newSelectedRows = new Set(prev);
-    if (isSelected) {
-      newSelectedRows.add(rowId);
-    } else {
-      newSelectedRows.delete(rowId);
-    }
-    return Array.from(newSelectedRows);
-  });
+interface ICreateUserDTO {
+  id?: string;
+  name: string;
+  phone?: string;
+  state?: string;
+  city?: string;
+  email: string;
+  cpf: string;
+  password: string;
+  avatar?: string;
+  role?: IRole;
+  location?: Omit<Location, "id" | "address">;
+  clients?: { id: string }[];
 }
+
+// Define the zod schema
+const createUserSchema = z.object({
+  name: z
+    .string()
+    .nonempty("Campo obrigatório")
+    .refine((value) => {
+      return value.split(" ").length > 1;
+    }, "Cadastre um nome e sobrenome"),
+  email: z.string().email("E-mail inválido"),
+  phone: z.string(),
+  state: z.string().nonempty("Campo obrigatório"),
+  city: z.string().nonempty("Campo obrigatório"),
+  cpf: z
+    .string()
+    .refine(cpfIsComplete, {
+      message: "CPF está incompleto",
+    })
+    .refine(cpfIsValid, {
+      message: "CPF Inválido",
+    }),
+  role: z.enum(["ADMIN", "CLIENT", "TECHNICIAN", "USER"]),
+  clients: z
+    .array(
+      z.object({
+        id: z.string().nonempty("Id é obrigatório"),
+        name: z.string(),
+      })
+    )
+    .optional(),
+
+  password: z.string().optional(),
+});
+
+type CreateUserFormData = z.infer<typeof createUserSchema>;
 
 interface IColumnsFieldsProps {
   onEditRow?: (user: IUser) => void;
@@ -46,7 +87,7 @@ interface IColumnsFieldsProps {
   setSelectedRows: React.Dispatch<React.SetStateAction<string[]>>;
 }
 
-const columnsFields = ({
+const linkClientsColumnsFields = ({
   onEditRow,
   onDeleteRow,
   setSelectedRows,
@@ -109,171 +150,210 @@ const columnsFields = ({
   },
 ];
 
-// Define the zod schema
-const userSchema = z.object({
-  name: z.string().nonempty(),
-  email: z.string().email("E-mail inválido"),
-  phone: z.string(),
-  state: z.string(),
-  city: z.string(),
-  cpf: z
-    .string()
-    .refine(cpfIsComplete, {
-      message: "CPF está incompleto",
-    })
-    .refine(cpfIsValid, {
-      message: "CPF Inválido",
-    }),
-  role: z.enum(["ADMIN", "CLIENT", "TECHNICIAN", "USER"]),
-  password: z.string().optional(),
-});
+const CreateUserPage = () => {
+  const router = useRouter();
+  const api = useAxiosAuth();
+  const queryClient = useQueryClient();
 
-type CreateUserFormData = z.infer<typeof userSchema>;
+  const { fetchUsers } = useUsers();
 
-export default function RegisterPage({ params }: RegisterPageProps) {
-  const { createUser, fetchUsers, error, isLoading } = useUsers();
+  const { data: users } = useQuery(["users", { role: "CLIENT" }], fetchUsers, {
+    keepPreviousData: true,
+  });
+
+  const [isLoading, setIsLoading] = useState(false);
   const [selectedRows, setSelectedRows] = useState<string[]>([]);
 
-  const router = useRouter();
-
   const methods = useForm<CreateUserFormData>({
-    resolver: zodResolver(userSchema),
+    resolver: zodResolver(createUserSchema),
+    reValidateMode: "onSubmit",
   });
 
   const {
     control,
     register,
     handleSubmit,
+    watch,
     formState: { errors },
   } = methods;
 
-  const selectedState = useWatch({ control, name: "state" });
-  const selectedRole = useWatch({ control, name: "role" });
-
-  const { cities, states, filterCities } = useCities(selectedState);
-
   const {
-    isLoading: isLoadingUsers,
-    isError,
-    error: errorUsers,
-    data: users,
-  } = useQuery(["users", { role: "CLIENT" }], fetchUsers, {
-    keepPreviousData: true, // Keep old data for smoother pagination transitions
+    fields: clients,
+    append: appendClient,
+    remove: removeClient,
+  } = useFieldArray({
+    control, // control props comes from useForm (optional: if you are using FormContext)
+    name: "clients", // unique name for your Field Array
   });
 
-  useEffect(() => {
-    if (selectedState) {
-      filterCities();
-    }
-  }, [selectedState, filterCities]);
+  const selectedRole = watch("role");
 
-  const onSubmit = (data: CreateUserFormData) => {
-    const newUser = {
-      ...data,
-      clients: selectedRows.map((row) => ({ id: row })),
-    };
-    if (newUser.name) {
-      createUser(newUser); // You will need to adjust the createUser function to handle FormData
+  const selectedState = watch("state");
+  const { cities, states } = useCities(selectedState);
+
+  const onSubmit = async (data: CreateUserFormData) => {
+    setIsLoading(true);
+    try {
+      await api.post("/users/create", {
+        ...data,
+        clients: selectedRows.map((id) => ({ id })),
+      });
+      // Handle success (e.g., show a success message or redirect)
+      toast.success("Sucesso ao criar o usuário");
+      router.push("/admin/usuarios");
+    } catch (error) {
+      // Handle error (e.g., show an error message)
+      const err = error as AxiosError<{ message: string }>;
+      toast.error(`Erro ao criar o usuário!  ${err.response?.data.message}`);
+      console.log(error);
     }
-    router.push("/admin/usuarios");
+    setIsLoading(false);
   };
 
-  if (error) return <div>An error has occurred: {error.message}</div>;
-
   return (
-    <div className="flex-1 items-center justify-center text-zinc-900">
-      <div className="pb-2 text-xl font-bold">Cadastrar Usuário</div>
-      <FormProvider {...methods}>
-        <form className="flex flex-col" onSubmit={handleSubmit(onSubmit)}>
-          <div className="flex flex-row flex-wrap">
-            <Input.Root className="basis-4/12 p-3">
-              <Input.Label>Nome:</Input.Label>
-              <Input.Controller register={register("name")} type="text" />
-              <Input.Error>
-                {errors.name && <p>{errors.name.message?.toString()}</p>}
-              </Input.Error>
-            </Input.Root>
-            <Input.Root className="basis-4/12 p-3">
-              <Input.Label>E-mail:</Input.Label>
-              <Input.Controller register={register("email")} type="email" />
-              <Input.Error>
-                {errors.email && <p>{errors.email.message?.toString()}</p>}
-              </Input.Error>
-            </Input.Root>
-
-            <Input.Root className="basis-4/12 p-3">
-              <Input.Label>Telefone:</Input.Label>
-              <Input.MaskedController
-                register={register("phone")}
-                mask="(99) 99999-9999"
-              />
-              <Input.Error>
-                {errors.phone && <p>{errors.phone.message?.toString()}</p>}
-              </Input.Error>
-            </Input.Root>
-            <Input.Root className="basis-4/12 p-3">
-              <Input.Label>CPF:</Input.Label>
-              <Input.MaskedController
-                register={register("cpf")}
-                mask="999.999.999-99"
-              />
-              <Input.Error>
-                {errors.cpf && <p>{errors.cpf.message?.toString()}</p>}
-              </Input.Error>
-            </Input.Root>
-            <Input.Root className="basis-4/12 p-3">
-              <Input.Label>Estado:</Input.Label>
-              <Input.SelectController name="state" options={states} />
-              <Input.Error>
-                {errors.state && <p>{errors.state.message?.toString()}</p>}
-              </Input.Error>
-            </Input.Root>
-            <Input.Root className="basis-4/12 p-3">
-              <Input.Label>Cidade:</Input.Label>
-              <Input.SelectController name="city" options={cities} />
-              <Input.Error>
-                {errors.city && <p>{errors.city.message?.toString()}</p>}
-              </Input.Error>
-            </Input.Root>
-            <Input.Root className="basis-4/12 p-3">
-              <Input.Label>Tipo de usuário:</Input.Label>
-              <Input.SelectController name="role" options={DEFAULT_ROLES} />
-              <Input.Error>
-                {errors.role && <p>{errors.role.message?.toString()}</p>}
-              </Input.Error>
-            </Input.Root>
-          </div>
-          {selectedRole === "TECHNICIAN" && users && (
-            <Input.Root className="flex-1 w-full p-3">
-              <Input.Label>
-                Selecione os clientes atendidos por este técnico:
-              </Input.Label>
-              {!isLoadingUsers && (
-                <DynamicTable<IUser>
-                  data={users}
-                  columns={columnsFields({
-                    setSelectedRows,
-                  })}
-                  searchByPlaceholder={"Procurar..."}
-                />
-              )}
-            </Input.Root>
-          )}
-          <div className="py-3 hover:cursor-pointer">
-            {isLoading ? (
-              <Loading></Loading>
-            ) : (
-              <Button
-                className="bg-blue-500 w-32 text-white "
-                variant={"default"}
-                type="submit"
-              >
-                Salvar
-              </Button>
+    <FormProvider {...methods}>
+      <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4">
+        <div className="">
+          <h2 className="text-black text-xl">Cadasto de usuário</h2>
+        </div>
+        {/* Input fields for each attribute, including masked inputs for phone and CPF */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4">
+          {/* Name Field */}
+          <div className="flex flex-col gap-1">
+            <label className="text-zinc-700 px-1">Nome</label>
+            <input
+              {...register("name", { required: true })}
+              className="w-full p-2 border rounded text-black"
+            />
+            {errors.name && (
+              <span className="text-red-500">{errors.name.message}</span>
             )}
           </div>
-        </form>
-      </FormProvider>
-    </div>
+
+          {/* Phone Field */}
+          <div className="flex flex-col gap-1">
+            <label className="text-zinc-700 px-1">Telefone</label>
+            <InputMask
+              className="w-full p-2 border rounded text-black"
+              mask="(99) 99999-9999"
+              placeholder="(XX) 99999-9999"
+              {...register("phone")}
+            />
+          </div>
+
+          {/* State Field */}
+          <div className="flex flex-col gap-1">
+            <label className="text-zinc-700 px-1">Estado</label>
+            <CustomSelect
+              name="state"
+              options={states}
+              className="w-full border rounded"
+            />
+            {errors.state && (
+              <span className="text-red-500">Campo obrigatório</span>
+            )}
+          </div>
+
+          {/* City Field */}
+          <div className="flex flex-col gap-1">
+            <label className="text-zinc-700 px-1">Cidade</label>
+            <CustomSelect name="city" options={cities} className="text-black" />
+            {errors.city && (
+              <span className="text-red-500">Campo obrigatório</span>
+            )}
+          </div>
+
+          {/* Email Field */}
+          <div className="flex flex-col gap-1">
+            <label className="text-zinc-700 px-1">E-mail</label>
+            <input
+              {...register("email", {
+                required: { value: true, message: "O e-mail é obrigatório" },
+              })}
+              placeholder="E-mail"
+              className="w-full p-2 px-3 border rounded text-black"
+            />
+            {errors.email && (
+              <span className="text-red-500">{errors.email.message}</span>
+            )}
+          </div>
+
+          {/* CPF Field */}
+          <div className="flex flex-col gap-1">
+            <label className="text-zinc-700 px-1">CPF</label>
+            <InputMask
+              className="w-full p-2 border rounded text-black"
+              mask="999.999.999-99"
+              placeholder="999.999.999-99"
+              {...register("cpf", {
+                required: { value: true, message: "Campo Obrigatório" },
+                validate: {
+                  cpfIsValue: (v) => cpfIsValid(v) || "CPF Inválido",
+                },
+              })}
+            ></InputMask>
+            {errors.cpf && (
+              <span className="text-red-500">{errors.cpf.message}</span>
+            )}
+          </div>
+          {/* ROLE Field */}
+          {/* DEFAULT_ROLES */}
+          <div className="flex flex-col gap-1">
+            <label className="text-zinc-700 px-1">Tipo de usuário</label>
+            <CustomSelect
+              name="role"
+              options={DEFAULT_ROLES}
+              className="text-black"
+            />
+            {errors.role && (
+              <span className="text-red-500">Campo obrigatório</span>
+            )}
+          </div>
+          {/* Password Field */}
+          <div className="flex flex-col gap-1">
+            <label className="text-zinc-700 px-1">Senha</label>
+            <input
+              id={"password"}
+              autoComplete="password"
+              type="password"
+              {...register("password")}
+              placeholder="Digite uma nova senha para o cliente"
+              className="w-full p-2 border rounded text-black"
+            />
+            {errors.password && (
+              <span className="text-red-500">Este campo é obrigatório</span>
+            )}
+          </div>
+        </div>
+        {selectedRole === "TECHNICIAN" && (
+          <div className="flex flex-col gap-2">
+            <label className="text-zinc-800 text-xl px-1">Clientes</label>
+            <label className="flex items-center gap-1 text-zinc-700 px-1">
+              <FiInfo></FiInfo>Selecione todos os clientes que o assistente
+              atende
+            </label>
+            <DynamicTable<IUser>
+              data={users || []}
+              selectedRows={selectedRows}
+              columns={linkClientsColumnsFields({ setSelectedRows })}
+              searchByPlaceholder="Procure o cliente"
+            />
+          </div>
+        )}
+        <div className="flex w-full justify-end">
+          <button
+            disabled={isLoading}
+            type="submit"
+            className="bg-blue-500 w-fit text-white rounded-full py-2 px-6 shadow-md"
+          >
+            Criar usuário
+          </button>
+        </div>
+      </form>
+    </FormProvider>
   );
-}
+
+  // Implementation will go here
+};
+
+export default CreateUserPage;

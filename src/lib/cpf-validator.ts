@@ -1,21 +1,24 @@
 export const cpfIsComplete = (data: string) => {
+  if (process.env.NODE_ENV !== "production") {
+    return true;
+  }
 
-  const clearCpf = data.trim().replaceAll('.', '').replaceAll('-', '')
+  const clearCpf = data.trim().replaceAll(".", "").replaceAll("-", "");
   if (clearCpf.length !== 11) {
     return false;
   }
 
   for (let i = 0; i < clearCpf.length; i++) {
-    if (clearCpf[i] < '0' || clearCpf[i] > '9') {
+    if (clearCpf[i] < "0" || clearCpf[i] > "9") {
       return false;
     }
   }
 
   return true;
-}
+};
 
 export const cpfIsValid = (data: string) => {
-  const clearCpf = data.trim().replaceAll('.', '').replaceAll('-', '')
+  const clearCpf = data.trim().replaceAll(".", "").replaceAll("-", "");
 
   let sum = 0;
   let remainder;
@@ -26,7 +29,7 @@ export const cpfIsValid = (data: string) => {
 
   remainder = (sum * 10) % 11;
 
-  if ((remainder == 10) || (remainder == 11)) {
+  if (remainder == 10 || remainder == 11) {
     remainder = 0;
   }
 
@@ -42,7 +45,7 @@ export const cpfIsValid = (data: string) => {
 
   remainder = (sum * 10) % 11;
 
-  if ((remainder == 10) || (remainder == 11)) {
+  if (remainder == 10 || remainder == 11) {
     remainder = 0;
   }
 
@@ -51,4 +54,4 @@ export const cpfIsValid = (data: string) => {
   }
 
   return true;
-}
+};

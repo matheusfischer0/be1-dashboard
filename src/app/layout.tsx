@@ -9,7 +9,7 @@ export const inter = Inter({
 });
 
 import Providers from "@/app/providers/provider.component";
-import { twMerge } from "tailwind-merge";
+import { Toaster } from "react-hot-toast";
 
 export const metadata: Metadata = {
   title: "BE1 Tecnologia",
@@ -25,6 +25,7 @@ export default function RootLayout({
     <html lang="en" className="bg-white">
       <body className={inter.className}>
         <Providers>{children}</Providers>
+        <Toaster />
       </body>
     </html>
   );

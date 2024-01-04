@@ -159,11 +159,7 @@ export default function Servicos() {
 
   return (
     <div className="flex-1 items-center justify-center text-black px-3">
-      <Toast
-        message={`Você tem certeza que deseja excluir ${selectedService?.description}?`}
-        onCancel={handleCancelDelete}
-        onConfirm={() => handleDelete()}
-      />
+      <Toast />
       <div className="flex justify-between items-center pb-2">
         <div className="text-lg font-medium">Serviços</div>
         <div>
