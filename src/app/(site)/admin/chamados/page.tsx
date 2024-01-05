@@ -249,11 +249,7 @@ export default function Chamados() {
 
   return (
     <div className="flex-1 items-center justify-center text-black">
-      <Toast
-        message={`Você tem certeza que deseja excluir ${selectedAssistance?.title}?`}
-        onCancel={handleCancelDelete}
-        onConfirm={() => handleDeleteAssistance()}
-      />
+      <Toast />
       <div className="flex justify-between items-center">
         <div className="text-lg font-medium">Chamados</div>
       </div>
