@@ -1,15 +1,15 @@
-'use client'
+"use client";
 
-import { useSession } from "next-auth/react"
-import { redirect } from "next/navigation"
-import Loading from "./components/loading.component"
+import { useSession } from "next-auth/react";
+import { redirect } from "next/navigation";
+import Loading from "./components/loading.component";
 
 export default function Home() {
-  const session = useSession()
+  const session = useSession();
 
-  if (session.status === 'unauthenticated') return redirect('/auth/login')
-  if (session.status === 'authenticated') return redirect('/admin')
-  if (session.status === 'loading') return <Loading />
+  if (session.status === "unauthenticated") return redirect("/auth/login");
+  if (session.status === "authenticated") return redirect("/admin");
+  if (session.status === "loading") return <Loading />;
 
   return (
     <main className="flex min-h-screen flex-col items-center justify-between p-24">
@@ -19,5 +19,5 @@ export default function Home() {
         </p>
       </div>
     </main>
-  )
+  );
 }
