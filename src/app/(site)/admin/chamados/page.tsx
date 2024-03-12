@@ -221,12 +221,15 @@ export default function Chamados() {
     router.push(`/admin/chamados/${assistance.id}`);
   };
 
-  const handleDeleteAssistance = useCallback(() => {
-    if (selectedAssistance) deleteAssistance(selectedAssistance?.id);
-  }, [deleteAssistance, selectedAssistance]);
+  const handleDeleteAssistance = useCallback(
+    (id: string) => {
+      if (id) deleteAssistance(id);
+    },
+    [deleteAssistance]
+  );
 
   const handleCancelDelete = useCallback(() => {
-    console.log("Deleted ", selectedAssistance?.title);
+    console.log("Canceled delete ", selectedAssistance?.title);
   }, [selectedAssistance]);
 
   const handleDelete = useCallback(
@@ -234,7 +237,7 @@ export default function Chamados() {
       setSelectedAssistance(assistance);
       openToast(
         `Você tem certeza que deseja excluir ${assistance?.title}?`,
-        () => handleDeleteAssistance(),
+        () => handleDeleteAssistance(assistance.id),
         handleCancelDelete
       );
     },

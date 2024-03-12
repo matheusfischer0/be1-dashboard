@@ -1,29 +1,29 @@
-'use client'
+"use client";
 
-import Image from 'next/image'
-import React, { useState } from 'react'
-import { LogoutButton, LinkButton } from './buttons.component'
+import Image from "next/image";
+import React, { useState } from "react";
+import { LogoutButton, LinkButton } from "./buttons.component";
 
-import { FiHome, FiUsers } from 'react-icons/fi'
-import { BsListTask } from 'react-icons/bs'
-import { GiSettingsKnobs } from 'react-icons/gi'
-import { SlLogout } from 'react-icons/sl'
-import { VscChevronLeft, VscChevronRight } from 'react-icons/vsc'
+import { FiHome, FiUsers } from "react-icons/fi";
+import { BsListTask } from "react-icons/bs";
+import { GiSettingsKnobs } from "react-icons/gi";
+import { SlLogout } from "react-icons/sl";
+import { VscChevronLeft, VscChevronRight } from "react-icons/vsc";
 
 export default function Sidebar() {
-  const [isOpen, setIsOpen] = useState(true)
+  const [isOpen, setIsOpen] = useState(true);
 
   return (
     <div
       className={`relative flex h-screen text-black shadow-sidebar bg-white border-r border-r-gray-100
-                  ${isOpen ? 'w-0 md:block md:w-20' : 'w-20 md:w-44'}`}
+                  ${isOpen ? "w-0 md:block md:w-20" : "w-20 md:w-44"}`}
     >
       <button
         id="open-close-sidebar"
-        className={`absolute top-[2rem] right-[-1.5rem] md:right-[-2rem] flex items-center 
-        justify-center text-black bg-white w-6 h-6 md:w-8 md:h-10 rounded-r-md border border-l-0`}
+        className={`absolute top-[2rem] right-[-2rem] md:right-[-2rem] flex items-center 
+        justify-center text-black bg-white w-8 h-8 md:w-8 md:h-10 rounded-r-md border border-l-0`}
         onClick={() => {
-          setIsOpen(!isOpen)
+          setIsOpen(!isOpen);
         }}
       >
         {!isOpen ? <VscChevronLeft size={32} /> : <VscChevronRight size={32} />}
@@ -40,67 +40,67 @@ export default function Sidebar() {
         <nav className="">
           <ul className="flex flex-col">
             <LinkButton
-              href={'/admin'}
+              href={"/admin"}
               className={`flex items-center justify-center w-full border-b
                          border-b-zinc-200 px-4 h-[52px]
-                         ${isOpen ? '' : ' md:justify-start'} `}
+                         ${isOpen ? "" : " md:justify-start"} `}
               prefetch
             >
-              <div className={`${isOpen ? 'pr-0' : 'pr-2'}`}>
+              <div className={`${isOpen ? "pr-0" : "pr-2"}`}>
                 <FiHome size={20} />
               </div>
               <span
                 className={`hidden text-md md:block 
-                ${isOpen ? 'md:hidden' : ''}`}
+                ${isOpen ? "md:hidden" : ""}`}
               >
                 Geral
               </span>
             </LinkButton>
             <LinkButton
-              href={'/admin/chamados'}
+              href={"/admin/chamados"}
               className={`flex items-center justify-center w-full border-b border-b-zinc-200 px-4 h-[52px]
-              ${isOpen ? '' : ' md:justify-start'} `}
+              ${isOpen ? "" : " md:justify-start"} `}
               prefetch
             >
-              <div className={`${isOpen ? 'pr-0' : 'pr-2'}`}>
+              <div className={`${isOpen ? "pr-0" : "pr-2"}`}>
                 <BsListTask size={20} />
               </div>
               <span
                 className={`hidden text-md md:block 
-                ${isOpen ? 'md:hidden' : ''}`}
+                ${isOpen ? "md:hidden" : ""}`}
               >
                 Chamados
               </span>
             </LinkButton>
             <LinkButton
-              href={'/admin/usuarios'}
+              href={"/admin/usuarios"}
               className={`flex items-center justify-center w-full 
               border-b border-b-zinc-200 px-4 h-[52px] 
-              ${isOpen ? '' : ' md:justify-start'} `}
+              ${isOpen ? "" : " md:justify-start"} `}
               prefetch
             >
-              <div className={`${isOpen ? 'pr-0' : 'pr-2'}`}>
+              <div className={`${isOpen ? "pr-0" : "pr-2"}`}>
                 <FiUsers size={20} />
               </div>
               <span
                 className={`hidden text-md md:block 
-                ${isOpen ? 'md:hidden' : ''}`}
+                ${isOpen ? "md:hidden" : ""}`}
               >
                 Usuários
               </span>
             </LinkButton>
             <LinkButton
-              href={'/admin/configuracoes/contatos'}
+              href={"/admin/configuracoes/contatos"}
               className={`flex items-center justify-center w-full border-b border-b-zinc-200 px-4 h-[52px] 
-              ${isOpen ? '' : ' md:justify-start'} `}
+              ${isOpen ? "" : " md:justify-start"} `}
               prefetch
             >
-              <div className={`${isOpen ? 'pr-0' : 'pr-2'}`}>
+              <div className={`${isOpen ? "pr-0" : "pr-2"}`}>
                 <GiSettingsKnobs size={20} />
               </div>
               <span
                 className={`hidden text-md md:block 
-                ${isOpen ? 'md:hidden' : ''}`}
+                ${isOpen ? "md:hidden" : ""}`}
               >
                 Configurações
               </span>
@@ -111,15 +111,15 @@ export default function Sidebar() {
           <LogoutButton
             className={`flex items-center justify-center w-full border-b 
             border-b-zinc-200 px-4 text-red-500 mb-32 h-[52px] 
-            ${isOpen ? '' : ' md:justify-start'}`}
+            ${isOpen ? "" : " md:justify-start"}`}
           >
             <div
-              className={`md:pr-2 ${isOpen ? 'md:pr-0 hidden md:block' : ''}`}
+              className={`md:pr-2 ${isOpen ? "md:pr-0 hidden md:block" : ""}`}
             >
               <SlLogout size={20} />
             </div>
             <span
-              className={`hidden text-md md:block ${isOpen ? 'md:hidden' : ''}`}
+              className={`hidden text-md md:block ${isOpen ? "md:hidden" : ""}`}
             >
               Sair
             </span>
@@ -127,5 +127,5 @@ export default function Sidebar() {
         </div>
       </div>
     </div>
-  )
+  );
 }
