@@ -12,8 +12,17 @@ export const textStatusColors: Record<string, string> = {
   ANALYSING: "text-yellow-500",
   PENDING: "text-orange-600",
   PROCESSING: "text-indigo-700",
-  FINISHED: "text-green-600",
+  FINISHED: "text-green-700",
   CLOSED: "text-gray-800",
+};
+
+export const textStatusPortugueseColors: Record<string, string> = {
+  Criado: "text-cyan-700",
+  "Em análise": "text-yellow-500",
+  Pendente: "text-orange-600",
+  "Em andamento": "text-indigo-700",
+  Finalizado: "text-green-700",
+  Fechado: "text-gray-800",
 };
 
 export const statusColorMap: { [key: string]: string } = {

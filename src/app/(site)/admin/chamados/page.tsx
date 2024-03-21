@@ -19,6 +19,8 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { textStatusPortugueseColors } from "@/utils/chartUtilsFunctions";
+import { formatDate } from "@/lib/date-functions";
 
 function updateSelectedRows(
   rowId: string,
@@ -128,9 +130,16 @@ const columnsFields = ({
         </Button>
       );
     },
-    cell: ({ row }) => (
-      <div className="capitalize">{row.getValue("status")}</div>
-    ),
+    cell: ({ row }) => {
+      const value = row.getValue("status") as string;
+      const textColor = textStatusPortugueseColors[value];
+
+      return (
+        <div className={`capitalize ${textColor}`}>
+          {row.getValue("status")}
+        </div>
+      );
+    },
   },
   {
     accessorKey: "clientName",
@@ -153,20 +162,28 @@ const columnsFields = ({
   },
   {
     accessorKey: "createdAt",
-    header: () => <div className="text-right">Criado Em:</div>,
-    cell: ({ row }) => {
-      const parsedDate = new Date(row.getValue("createdAt"));
-
-      // Format the amount as a dollar amount
-      const formatted =
-        parsedDate.getUTCDate() +
-        "/" +
-        parsedDate.getUTCMonth() +
-        "/" +
-        parsedDate.getUTCFullYear();
-
-      return <div className="text-right font-medium">{formatted}</div>;
+    header: ({ column }) => {
+      return (
+        <div className="flex justify-end">
+          <Button
+            className="p-0 self-end"
+            variant="ghost"
+            onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+          >
+            <div className="flex items-center justify-end">
+              Data de criação
+              <CaretSortIcon className="ml-2 h-4 w-4" />
+            </div>
+          </Button>
+        </div>
+      );
     },
+    cell: ({ row }) => {
+      const parsedDate = formatDate(row.getValue("createdAt"));
+
+      return <div className="text-right font-medium">{parsedDate}</div>;
+    },
+    enableSorting: true,
   },
   {
     accessorKey: "actions",
