@@ -34,6 +34,7 @@ import { Input } from "@/components/ui/input";
 import Select from "react-select";
 import { useProducts } from "@/hooks/useProducts";
 import { formatDate } from "@/lib/date-functions";
+import Loading from "@/app/components/loading.component";
 
 interface Location {
   latitude: number;
@@ -235,7 +236,7 @@ const EditUserPage = ({ params }: EditUserPageProps) => {
   const { Toast, openToast } = useToast();
 
   const { products } = useProducts();
-  const { user } = useUser(params.id);
+  const { user, isLoading: isLoadingUsers } = useUser(params.id);
   const { fetchUsers } = useUsers();
 
   const { data: users } = useQuery(["users", { role: "CLIENT" }], fetchUsers, {
@@ -271,7 +272,6 @@ const EditUserPage = ({ params }: EditUserPageProps) => {
   } = methods;
 
   useEffect(() => {
-    console.log("USER", user);
     if (user) {
       setValue("name", user.name);
       setValue("email", user.email);
@@ -358,6 +358,10 @@ const EditUserPage = ({ params }: EditUserPageProps) => {
       console.log(error);
     }
   };
+
+  if (isLoadingUsers) {
+    <Loading></Loading>;
+  }
 
   return (
     <>
@@ -579,8 +583,6 @@ const EditUserPage = ({ params }: EditUserPageProps) => {
       </FormProvider>
     </>
   );
-
-  // Implementation will go here
 };
 
 export default EditUserPage;
